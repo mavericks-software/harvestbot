@@ -1,6 +1,6 @@
 {
   "name": "harvestbot",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "Chatbot for providing hours info from Harvest.",
   "main": "bin/index.js",
   "scripts": {

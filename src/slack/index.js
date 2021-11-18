@@ -10,7 +10,7 @@ export default (config, http, responseUrl) => {
   );
 
   const getUserEmailForId = (userId) => api
-    .getJson(`/users.info?user=${userId}&token=${config.slackBotToken}`)
+    .getJson(`/users.info?user=${userId}`)
     .pipe(
       filter(({
         user: {
@@ -32,7 +32,6 @@ export default (config, http, responseUrl) => {
       channel: imId,
       text: header,
       attachments: messages ? [{ text: messages.join('\n') }] : [],
-      as_user: false,
       user: userId,
     }).toPromise();
 

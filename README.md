@@ -49,6 +49,7 @@ export GCLOUD_PROJECT=XXX
 
 # Google cloud region for cloud functions
 export GCLOUD_FUNCTION_REGION=XXX
+export FUNCTION_REGION=XXX
 
 # Path to JSON file you created in Google Cloud console
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/file.json
@@ -163,6 +164,7 @@ export TF_VAR_gcloud_service_account_email=<gcloud_project_id>@appspot.gservicea
 * Initialize encryption related resources to Google Cloud using Terraform-tool:
 ```
 cd infra
+terraform init
 terraform apply
 ```
 
@@ -170,7 +172,7 @@ terraform apply
 
 1. [Create new Slack App](https://api.slack.com/apps)
 1. Configure the slash command that will trigger your bot in "Slash Commands" tab. The request URL you can fill out later when you have the cloud functions in place.
-1. Add permissions for scopes **chat:write:bot**, **commands**, **users:read** and **users:read.email** to be able to send messages to your workspace and get the users email address.
+1. Add permissions for scopes **chat:write**, **commands**, **users:read** and **users:read.email** to be able to send messages to your workspace and get the users email address.
 1. Install the app to your workspace.
 1. Record the Slack signing secret and OAuth access token for configuration in later step.
 
@@ -197,7 +199,7 @@ App configuration should be stored to Google Storage using the encrypt feature o
 * The app will pick up the configuration from environment variables and bundle them to a file. Encrypt the first version to Google Storage
 
 ```
-  npm start init:config
+  npm run init:config
 ```
 
 After you have successfully stored the configuration for the first time, you can later on save the changed configuration by running:
@@ -218,10 +220,10 @@ echo "Set project"
 gcloud --quiet config set project $GCLOUD_PROJECT
 
 echo "Deploy functions"
-gcloud functions deploy initFlextime --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs8 --trigger-http
-gcloud functions deploy calcFlextime --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs8 --trigger-topic flextime
-gcloud functions deploy calcStats --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs8 --trigger-topic stats
-gcloud functions deploy notifyUsers --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs8 --trigger-http
+gcloud functions deploy initFlextime --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
+gcloud functions deploy calcFlextime --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-topic flextime
+gcloud functions deploy calcStats --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-topic stats
+gcloud functions deploy notifyUsers --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
 ```
 
 When the deployment is done, copy the URL for initFlextime-function (from Google Cloud Console) and paste it to Slack slash command configuration. The format should be something like https://REGION-PROJECT_ID.cloudfunctions.net/initFlextime. Test out the command from Slack and see from Google Cloud Console logs what went wrong :)

@@ -14,7 +14,7 @@ var _default = (config, http, responseUrl) => {
     Authorization: `Bearer ${config.slackBotToken}`
   });
 
-  const getUserEmailForId = userId => api.getJson(`/users.info?user=${userId}&token=${config.slackBotToken}`).pipe((0, _operators.filter)(({
+  const getUserEmailForId = userId => api.getJson(`/users.info?user=${userId}`).pipe((0, _operators.filter)(({
     user: {
       deleted,
       is_restricted: isMultiChannelGuest,
@@ -41,7 +41,6 @@ var _default = (config, http, responseUrl) => {
     attachments: messages ? [{
       text: messages.join('\n')
     }] : [],
-    as_user: false,
     user: userId
   }).toPromise();
 
