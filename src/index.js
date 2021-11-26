@@ -10,6 +10,12 @@ import verifier from './verifier';
 let logger = null;
 let appConfig = null;
 
+const admins = [
+  'UHDKSPAAJ', // samu
+  'U01894CTTMH', // ansu
+  'UF81Z11T4' // jouni
+];
+
 const getAppConfig = async () => {
   if (appConfig) {
     return appConfig;
@@ -26,13 +32,13 @@ export const initFlextime = async (req, res) => {
     const cmd = req.body.text;
 
     if (cmd === 'help') {
-      return res.json({ text: '_Bot for calculating your harvest balance. Use /flextime with no parameters to start calculation._' });
+      return res.json({ text: '_Bot for calculating your harvest balance. Use /flextime to start calculation._' });
     }
 
     logger.info(`Received valid Slack request with cmd ${cmd}`);
 
     const cmdParts = cmd.split(' ');
-    if (cmdParts.length > 0 && cmdParts[0] === 'stats') {
+    if (cmdParts.length > 0 && cmdParts[0] === 'stats' && admins.includes(req.body.user_id)) {
       const currentDate = new Date();
       const year = cmdParts.length > 1 ? cmdParts[1] : currentDate.getFullYear();
       const month = cmdParts.length > 2 ? cmdParts[2] : currentDate.getMonth() + 1;
@@ -43,7 +49,7 @@ export const initFlextime = async (req, res) => {
         .enqueueStatsRequest({
           userId: req.body.user_id, responseUrl: req.body.response_url, year, month,
         });
-      return res.json({ text: 'Starting to generate stats. This may take a while...' });
+      return res.json({ text: 'Starting to generate stats. This may take a while.' });
     }
 
     logger.info('Enqueuing flex time request');
