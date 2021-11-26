@@ -2,7 +2,7 @@
   "name": "harvestbot",
   "version": "1.10.0",
   "description": "Chatbot for providing hours info from Harvest.",
-  "main": "bin/index.js",
+  "main": "build/index.js",
   "scripts": {
     "build": "rimraf build/ && babel ./src --out-dir build/ --ignore **/*.test.js",
     "ci:automerge": "circleci-automerge --filter=\"^greenkeeper/\"",

@@ -11,8 +11,14 @@
 # from your .gitignore file, remove the corresponding line
 # below:
 .git
-.gitignore
 
 node_modules
-#!include:.gitignore
+.envrc
+.DS_Store
+coverage/
+.terraform/
+*.tfstate
+*.backup
+.idea
+.in
 google-application-credentials.json
