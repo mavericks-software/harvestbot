@@ -12,8 +12,11 @@ let appConfig = null;
 
 const admins = [
   'UHDKSPAAJ', // samu
+  'U01U3H9DC2W', // mikko k
+
   'U01894CTTMH', // ansu
-  'UF81Z11T4' // jouni
+  'UF81Z11T4', // jouni
+  'U032DGC20DS', // jenni
 ];
 
 const getAppConfig = async () => {
@@ -38,7 +41,12 @@ export const initFlextime = async (req, res) => {
     logger.info(`Received valid Slack request with cmd ${cmd}`);
 
     const cmdParts = cmd.split(' ');
-    if (cmdParts.length > 0 && cmdParts[0] === 'stats' && admins.includes(req.body.user_id)) {
+    if (cmdParts.length > 0 && cmdParts[0] === 'stats') {
+      if (!admins.includes(req.body.user_id)) {
+        logger.warn(`Received unauthorized stats request from user ${req.body.user_id}`);
+        return res.status(401).send('Unauthorized');
+      }
+
       const currentDate = new Date();
       const year = cmdParts.length > 1 ? cmdParts[1] : currentDate.getFullYear();
       const month = cmdParts.length > 2 ? cmdParts[2] : currentDate.getMonth() + 1;
