@@ -8,6 +8,7 @@ import excel from './excel';
 import cal from './calendar';
 import harvest from './harvest';
 import emailer from './emailer';
+import writeBillingReport from './pdf';
 
 export default (config, http) => {
   const logger = log(config);
@@ -169,17 +170,6 @@ export default (config, http) => {
       return result;
     }, {});
 
-  const createExcelRows = (user, projectName, projectEntries) => {
-    const rows = [
-      [`${user.firstName} ${user.lastName}`],
-      [`Project: ${projectName}`],
-      [`Total hours: ${projectEntries.reduce((total, entry) => total + entry.hours, 0)}`],
-      [],
-      ['Date', 'Hours', 'Notes'],
-    ];
-    return rows.concat(projectEntries.map((entry) => [entry.date, entry.hours, entry.notes]));
-  };
-
   const generateReports = async (
     yearArg,
     monthArg,
@@ -218,11 +208,10 @@ export default (config, http) => {
         // eslint-disable-next-line prefer-destructuring
         const projectName = projectEntries[0].projectName;
         const escapedProjectName = projectName.replace(/(\W+)/gi, '_');
-        const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.xlsx`;
+        const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.pdf`;
         const filePath = `${tmpdir()}/${fileName}`;
         logger.info(`Writing report to ${filePath}`);
-        excel().writeReportWorkbook(filePath,
-          createExcelRows(userEntries.user, projectName, projectEntries));
+        writeBillingReport(filePath, userEntries.user, projectName, projectEntries);
         reportPaths.push(filePath);
       });
     });
