@@ -28,7 +28,7 @@ export default (config, http) => {
 
   const generateReports = async (email, year, month, lastNames) => {
     logger.info(`Generating reports for ${year}-${month}`);
-    await app.generateReports(email, year, month, lastNames);
+    await app.generateReports(year, month, lastNames, email);
     logger.info(`Sent report to ${email}`);
   };
 
