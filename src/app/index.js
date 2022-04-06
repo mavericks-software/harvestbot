@@ -217,7 +217,8 @@ export default (config, http) => {
         const projectEntries = userEntries.entries[projectId];
         // eslint-disable-next-line prefer-destructuring
         const projectName = projectEntries[0].projectName;
-        const fileName = `${userEntries.user.lastName}_${projectName}_${year}_${month}.xlsx`;
+        const escapedProjectName = projectName.replace(/(\W+)/gi, '_');
+        const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.xlsx`;
         const filePath = `${tmpdir()}/${fileName}`;
         logger.info(`Writing report to ${filePath}`);
         excel().writeReportWorkbook(filePath,
