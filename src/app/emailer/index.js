@@ -3,25 +3,28 @@ import sgMail from '@sendgrid/mail';
 
 export default (config) => {
   // TODO: error handling
-  const sendExcelFile = async (email, subject, message, filePath, fileName) => {
+  const sendEmail = async (email, subject, message, filePaths) => {
     sgMail.setApiKey(config.sendGridApiKey);
-    const excelFile = readFileSync(filePath);
+    const attachments = filePaths.map((path) => {
+      const excelFile = readFileSync(path);
+      return {
+        content: Buffer.from(excelFile).toString('base64'),
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        filename: path.substring(path.lastIndexOf('/') + 1),
+        disposition: 'attachment',
+      };
+    });
     const msg = {
       to: email,
       from: `noreply@${config.emailDomains[0]}`,
       subject,
       text: message,
-      attachments: [{
-        content: Buffer.from(excelFile).toString('base64'),
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        filename: fileName,
-        disposition: 'attachment',
-      }],
+      attachments,
     };
     return sgMail.send(msg);
   };
 
   return {
-    sendExcelFile,
+    sendEmail,
   };
 };

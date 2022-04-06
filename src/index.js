@@ -41,7 +41,7 @@ export const initFlextime = async (req, res) => {
     logger.info(`Received valid Slack request with cmd ${cmd}`);
 
     const cmdParts = cmd.split(' ');
-    if (cmdParts.length > 0 && cmdParts[0] === 'stats') {
+    if (cmdParts.length > 0 && cmdParts[0].trim().length > 0) {
       if (!admins.includes(req.body.user_id)) {
         logger.warn(`Received unauthorized stats request from user ${req.body.user_id}`);
         return res.status(401).send('Unauthorized');
@@ -51,17 +51,34 @@ export const initFlextime = async (req, res) => {
       const year = cmdParts.length > 1 ? cmdParts[1] : currentDate.getFullYear();
       const month = cmdParts.length > 2 ? cmdParts[2] : currentDate.getMonth() + 1;
 
-      logger.info('Enqueuing stats request');
+      switch (cmdParts[0]) {
+        case 'stats':
+          logger.info('Enqueuing stats request');
+          await queue(config)
+            .enqueueStatsRequest({
+              userId: req.body.user_id, responseUrl: req.body.response_url, year, month,
+            });
+          return res.json({ text: 'Starting to generate stats. This may take a while.' });
 
-      await queue(config)
-        .enqueueStatsRequest({
-          userId: req.body.user_id, responseUrl: req.body.response_url, year, month,
-        });
-      return res.json({ text: 'Starting to generate stats. This may take a while.' });
+        case 'report':
+          logger.info('Enqueuing report request');
+          await queue(config)
+            .enqueueReportsRequest({
+              userId: req.body.user_id,
+              responseUrl: req.body.response_url,
+              year,
+              month,
+              lastNames: cmdParts.slice(3).map((lastName) => lastName.toLowerCase()),
+            });
+          return res.json({ text: 'Starting to generate reports. This may take a while.' });
+
+        default:
+          logger.warn('Received unknown command');
+          return res.status(401).send('Unknown command');
+      }
     }
 
     logger.info('Enqueuing flex time request');
-
     await queue(config)
       .enqueueFlexTimeRequest({ userId: req.body.user_id, responseUrl: req.body.response_url });
     return res.json({ text: 'Starting to calculate flextime. This may take a while... Join channel #harvest for weekly notifications.' });
@@ -128,8 +145,31 @@ export const calcStats = async (message) => {
       return slack.postMessage(userId, 'Cannot find email for Slack user id');
     }
 
-    const result = await application(config, http).generateReport(year, month, email);
+    const result = await application(config, http).generateStats(year, month, email);
     logger.info('Stats generated');
+
+    return slack.postMessage(userId, result);
+  }
+  return logger.error('Cannot find Slack user id');
+};
+
+export const calcReports = async (message) => {
+  const config = await getAppConfig();
+  const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
+  const slack = slackApi(config, http, request.responseUrl);
+  const {
+    userId, year, month, lastNames,
+  } = request;
+
+  if (userId) {
+    logger.info(`Calculating reports requested by user ${userId}`);
+    const email = await slack.getUserEmailForId(userId); // TODO: need slack admin role?
+    if (!email) {
+      return slack.postMessage(userId, 'Cannot find email for Slack user id');
+    }
+
+    const result = await application(config, http).generateReports(year, month, lastNames, email);
+    logger.info('Reports generated');
 
     return slack.postMessage(userId, result);
   }

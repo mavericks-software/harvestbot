@@ -4,6 +4,7 @@ export default (config) => {
   const topics = {
     flextime: 'flextime',
     stats: 'stats',
+    reports: 'reports',
   };
   const pubsubClient = new PubSub({
     projectId: config.projectId,
@@ -15,5 +16,8 @@ export default (config) => {
   const enqueueStatsRequest = (data) => pubsubClient
     .topic(topics.stats).publish(Buffer.from(JSON.stringify(data)));
 
-  return { enqueueFlexTimeRequest, enqueueStatsRequest };
+  const enqueueReportsRequest = (data) => pubsubClient
+    .topic(topics.reports).publish(Buffer.from(JSON.stringify(data)));
+
+  return { enqueueFlexTimeRequest, enqueueStatsRequest, enqueueReportsRequest };
 };

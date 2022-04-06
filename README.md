@@ -29,6 +29,10 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 Statistics sheet displays work time statistics for each company employee. The second tab gives detailed information for billable hours that can be used as the basis for billing.
 
+**Generate monthly billing reports send it via email to current Slack user**
+
+```/flextime report 2019 3 virtanen meikäläinen```
+
 ## Development
 
 Harvestbot functionality can be triggered from local machine using CLI-interface. Install relevant tools and setup environment variables first.
@@ -109,10 +113,11 @@ Options:
   -h, --help                    output usage information
 
 Commands:
-  stats <email> <year> <month>  Send monthly statistics to given email address.
-  flextime <email>              Calculate flex saldo for given user.
-  encrypt                       Encrypt and store app configuration.
-  decrypt                       Decrypt and show app configuration.
+  stats <email> <year> <month>                    Send monthly statistics to given email address.
+  reports <email> <year> <month> <last names...>  Send monthly billing report to given email address, select consultants by last names
+  flextime <email>                                Calculate flex saldo for given user.
+  encrypt                                         Encrypt and store app configuration.
+  decrypt                                         Decrypt and show app configuration.
 ```
 
 Example:
@@ -220,10 +225,11 @@ echo "Set project"
 gcloud --quiet config set project $GCLOUD_PROJECT
 
 echo "Deploy functions"
-gcloud functions deploy initFlextime --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
-gcloud functions deploy calcFlextime --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-topic flextime
-gcloud functions deploy calcStats --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-topic stats
-gcloud functions deploy notifyUsers --region $GCLOUD_FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
+gcloud functions deploy initFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
+gcloud functions deploy calcFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic flextime
+gcloud functions deploy calcStats --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic stats
+gcloud functions deploy calcReports --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic reports
+gcloud functions deploy notifyUsers --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
 ```
 
 When the deployment is done, copy the URL for initFlextime-function (from Google Cloud Console) and paste it to Slack slash command configuration. The format should be something like https://REGION-PROJECT_ID.cloudfunctions.net/initFlextime. Test out the command from Slack and see from Google Cloud Console logs what went wrong :)

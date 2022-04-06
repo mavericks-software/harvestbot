@@ -22,7 +22,13 @@ export default (config, http) => {
 
   const generateStats = async (email, year, month) => {
     logger.info(`Generating stats for ${year}-${month}`);
-    await app.generateReport(year, month, email);
+    await app.generateStats(year, month, email);
+    logger.info(`Sent stats report to ${email}`);
+  };
+
+  const generateReports = async (email, year, month, lastNames) => {
+    logger.info(`Generating reports for ${year}-${month}`);
+    await app.generateReports(email, year, month, lastNames);
     logger.info(`Sent report to ${email}`);
   };
 
@@ -34,7 +40,6 @@ export default (config, http) => {
 
   const encryptConfiguration = async () => {
     logger.info('Encrypting configuration...');
-
     encryptSecret(JSON.stringify(configuration));
   };
 
@@ -64,6 +69,10 @@ export default (config, http) => {
       .command('stats <email> <year> <month>')
       .description('Send monthly statistics to given email address.')
       .action(generateStats);
+    program
+      .command('report <email> <year> <month> <lastname...>')
+      .description('Send monthly reports to given email address for the listed users.')
+      .action(generateReports);
     program
       .command('flextime <email>')
       .description('Calculate flex saldo for given user.')

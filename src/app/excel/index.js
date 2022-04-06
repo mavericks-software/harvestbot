@@ -4,7 +4,7 @@ export default () => {
   const CHAR_CODE_A = 65;
 
   // TODO: error handling
-  const writeSheet = (filePath, sheets) => {
+  const writeStatsWorkbook = (filePath, sheets) => {
     const book = xlsx.utils.book_new();
     sheets.map((
       {
@@ -32,7 +32,15 @@ export default () => {
     xlsx.writeFile(book, filePath);
   };
 
+  const writeReportWorkbook = (filePath, rows) => {
+    const book = xlsx.utils.book_new();
+    const sheet = xlsx.utils.aoa_to_sheet(rows);
+    xlsx.utils.book_append_sheet(book, sheet, 'Sheet 1');
+    xlsx.writeFile(book, filePath);
+  };
+
   return {
-    writeSheet,
+    writeStatsWorkbook,
+    writeReportWorkbook,
   };
 };
