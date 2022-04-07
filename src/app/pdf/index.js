@@ -36,6 +36,14 @@ export default function writeBillingReport(
   autoTable(doc, {
     theme: 'striped',
     headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
+    didParseCell: (hookData) => {
+      if (hookData.section === 'head') {
+        if (hookData.column.dataKey === 2) {
+          // eslint-disable-next-line no-param-reassign
+          hookData.cell.styles.halign = 'right';
+        }
+      }
+    },
     alternateRowStyles: { fillColor: [220, 220, 220] },
     columnStyles: { 2: { halign: 'right' } },
     head: [['Date', 'Notes', 'Hours']],
