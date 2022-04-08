@@ -90,12 +90,24 @@ export default (config, http) => {
     []);
   };
 
-  const generateMonthlyHoursStats = async (ntcEntries, contractorEntries, year, month) => {
+  const generateMonthlyHoursStats = async (
+    invoicableEntries,
+    nonInvoicableEntries,
+    contractorEntries,
+    year,
+    month,
+  ) => {
     const workDaysInMonth = calendar.getWorkingDaysForMonth(year, month);
     return [
       { name: 'CALENDAR DAYS', days: workDaysInMonth },
-      ...ntcEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
       {},
+      { name: 'INVOICABLE' },
+      ...invoicableEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+      {},
+      { name: 'NON-INVOICABLE' },
+      ...nonInvoicableEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+      {},
+      { name: 'CONTRACTORS' },
       ...contractorEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
     ];
   };
@@ -126,13 +138,26 @@ export default (config, http) => {
     }
 
     const allEntries = await getMonthlyEntriesByUser(users, year, month);
-    const contractorIDs = users.filter((user) => user.is_contractor).map((user) => user.id);
-    const ntcEntries = allEntries.filter((entry) => !contractorIDs.includes(entry.user.id));
-    const contractorEntries = allEntries.filter((entry) => contractorIDs.includes(entry.user.id));
+    const entriesByType = allEntries.reduce((result, entry) => {
+      if (entry.user.roles.includes('Non-billable') && !entry.user.is_contractor) {
+        result.nonInvoicable.push(entry);
+      } else if (entry.user.is_contractor) {
+        result.contractors.push(entry);
+      } else {
+        result.invoicable.push(entry);
+      }
+      return result;
+    },
+    {
+      invoicable: [],
+      nonInvoicable: [],
+      contractors: [],
+    });
 
     const monthlyHoursRows = await generateMonthlyHoursStats(
-      ntcEntries,
-      contractorEntries,
+      entriesByType.invoicable,
+      entriesByType.nonInvoicable,
+      entriesByType.contractors,
       year,
       month,
     );
