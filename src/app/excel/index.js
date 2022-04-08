@@ -32,15 +32,7 @@ export default () => {
     xlsx.writeFile(book, filePath);
   };
 
-  const writeReportWorkbook = (filePath, rows) => {
-    const book = xlsx.utils.book_new();
-    const sheet = xlsx.utils.aoa_to_sheet(rows);
-    xlsx.utils.book_append_sheet(book, sheet, 'Sheet 1');
-    xlsx.writeFile(book, filePath);
-  };
-
   return {
     writeStatsWorkbook,
-    writeReportWorkbook,
   };
 };
