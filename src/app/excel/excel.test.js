@@ -6,10 +6,10 @@ import excel from './index';
 describe('Excel', () => {
   const writer = excel();
 
-  describe('writeSheet', () => {
+  describe('writeStatsWorkbook', () => {
     it('calculate total work hours since date', () => {
       const fileName = `${tmpdir()}/temp.xlsx`;
-      writer.writeSheet(
+      writer.writeStatsWorkbook(
         fileName,
         [{
           rows: [{ name: 'name' }],

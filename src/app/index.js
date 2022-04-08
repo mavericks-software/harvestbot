@@ -8,6 +8,7 @@ import excel from './excel';
 import cal from './calendar';
 import harvest from './harvest';
 import emailer from './emailer';
+import writeBillingReport from './pdf';
 
 export default (config, http) => {
   const logger = log(config);
@@ -65,7 +66,7 @@ export default (config, http) => {
     return { header, messages };
   };
 
-  const getMonthlyEntries = async (users, year, month) => {
+  const getMonthlyEntriesByUser = async (users, year, month, includeNonBillable = true) => {
     const orderValue = (a, b) => (a < b ? -1 : 1);
     const compare = (a, b) => (a === b ? 0 : orderValue(a, b));
     const sortedUsers = users.sort(
@@ -75,23 +76,18 @@ export default (config, http) => {
     const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
     const timeEntries = sortedUsers.map(({ id }) => rawTimeEntries
       .filter((entry) => entry.user.id === id)
+      .filter((entry) => includeNonBillable || entry.billable)
       .map(({
-        spent_date: date, hours, billable,
+        spent_date: date, hours, billable, notes,
         project: { id: projectId, name: projectName },
         task: { id: taskId, name: taskName },
       }) => ({
-        date, hours, billable, projectId, projectName, taskId, taskName,
+        date, hours, billable, projectId, projectName, taskId, taskName, notes,
       })));
-    const validEntries = timeEntries.reduce((result, entries, index) => (entries.length > 0
+    return timeEntries.reduce((result, entries, index) => (entries.length > 0
       ? [...result, { user: sortedUsers[index], entries }]
       : result),
     []);
-
-    const contractorIDs = sortedUsers.filter((user) => user.is_contractor).map((user) => user.id);
-    const ntcEntries = validEntries.filter((entry) => !contractorIDs.includes(entry.user.id));
-    const contractorEntries = validEntries.filter((entry) => contractorIDs.includes(entry.user.id));
-
-    return { ntcEntries, contractorEntries, allEntries: validEntries };
   };
 
   const generateMonthlyHoursStats = async (ntcEntries, contractorEntries, year, month) => {
@@ -109,7 +105,7 @@ export default (config, http) => {
     return analyzer.getBillableStats(entries, taskRates);
   };
 
-  const generateReport = async (
+  const generateStats = async (
     yearArg,
     monthArg,
     email,
@@ -129,11 +125,11 @@ export default (config, http) => {
       return `Unable to authorise harvest user ${email}`;
     }
 
-    const { ntcEntries, contractorEntries, allEntries } = await getMonthlyEntries(
-      users,
-      year,
-      month,
-    );
+    const allEntries = await getMonthlyEntriesByUser(users, year, month);
+    const contractorIDs = users.filter((user) => user.is_contractor).map((user) => user.id);
+    const ntcEntries = allEntries.filter((entry) => !contractorIDs.includes(entry.user.id));
+    const contractorEntries = allEntries.filter((entry) => contractorIDs.includes(entry.user.id));
+
     const monthlyHoursRows = await generateMonthlyHoursStats(
       ntcEntries,
       contractorEntries,
@@ -145,7 +141,7 @@ export default (config, http) => {
     const fileName = `${year}-${month}-hours-${new Date().getTime()}.xlsx`;
     const filePath = `${tmpdir()}/${fileName}`;
     logger.info(`Writing stats to ${filePath}`);
-    excel().writeSheet(
+    excel().writeStatsWorkbook(
       filePath,
       [{
         rows: monthlyHoursRows,
@@ -160,13 +156,74 @@ export default (config, http) => {
         columns: [{ index: 0, width: 20 }, { index: 1, width: 20 }, { index: 3, width: 20 }],
       }],
     );
-    await emailer(config).sendExcelFile(authorisedUser.email, 'Monthly harvest stats', `${year}-${month}`, filePath, fileName);
+    await emailer(config).sendEmail(authorisedUser.email, 'Monthly harvest stats', `${year}-${month}`, [filePath]);
     unlinkSync(filePath);
     return `Stats sent to email ${authorisedUser.email}.`;
   };
 
+  const sortEntriesByProjectAndDate = (entries) => entries
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .reduce((previous, entry) => {
+      const result = previous;
+      result[entry.projectId] = result[entry.projectId] || [];
+      result[entry.projectId].push(entry);
+      return result;
+    }, {});
+
+  const generateReports = async (
+    yearArg,
+    monthArg,
+    lastNames,
+    email,
+    year = parseInt(yearArg, 10),
+    month = parseInt(monthArg, 10),
+  ) => {
+    const userName = validateEmail(email);
+    if (!userName) {
+      return `Invalid email domain for ${email}`;
+    }
+
+    const users = await tracker.getUsers();
+    const authorisedUser = users.find(
+      (user) => user.is_admin && validateEmail(user.email) === userName,
+    );
+    if (!authorisedUser) {
+      return `Unable to authorise harvest user ${email}`;
+    }
+
+    const selectedUsers = users.filter((user) => lastNames.includes(user.last_name.toLowerCase()));
+    const entries = (await getMonthlyEntriesByUser(selectedUsers, year, month, false))
+      .map((monthlyEntries) => ({
+        user: {
+          firstName: monthlyEntries.user.first_name,
+          lastName: monthlyEntries.user.last_name,
+        },
+        entries: sortEntriesByProjectAndDate(monthlyEntries.entries),
+      }));
+
+    const reportPaths = [];
+    entries.forEach((userEntries) => {
+      Object.keys(userEntries.entries).forEach((projectId) => {
+        const projectEntries = userEntries.entries[projectId];
+        // eslint-disable-next-line prefer-destructuring
+        const projectName = projectEntries[0].projectName;
+        const escapedProjectName = projectName.replace(/(\W+)/gi, '_');
+        const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.pdf`;
+        const filePath = `${tmpdir()}/${fileName}`;
+        logger.info(`Writing report to ${filePath}`);
+        writeBillingReport(filePath, userEntries.user, projectName, projectEntries);
+        reportPaths.push(filePath);
+      });
+    });
+
+    await emailer(config).sendEmail(authorisedUser.email, 'Monthly harvest billing reports', `${year}-${month}`, reportPaths);
+    reportPaths.forEach((path) => unlinkSync(path));
+    return `Reports sent to email ${authorisedUser.email}.`;
+  };
+
   return {
     calcFlextime,
-    generateReport,
+    generateStats,
+    generateReports,
   };
 };
