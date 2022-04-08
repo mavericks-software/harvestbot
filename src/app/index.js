@@ -84,9 +84,12 @@ export default (config, http) => {
       }) => ({
         date, hours, billable, projectId, projectName, taskId, taskName, notes,
       })));
-    return timeEntries.reduce((result, entries, index) => (entries.length > 0
-      ? [...result, { user: sortedUsers[index], entries }]
-      : result),
+    return timeEntries.reduce((result, entries, index) => {
+      const user = sortedUsers[index];
+      return entries.length > 0 || user.is_active
+        ? [...result, { user, entries }]
+        : result;
+    },
     []);
   };
 
