@@ -82,7 +82,6 @@ export default ({ taskIds }) => {
         working,
         vacation,
         unpaidLeave,
-        flexLeave,
       },
     } = result;
     if (dates.includes(entry.date)) {
@@ -94,7 +93,6 @@ export default ({ taskIds }) => {
         working: isHoliday(entry.taskId) ? working : working + 1,
         vacation: isVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
-        flexLeave: isFlexLeave(entry.taskId) ? flexLeave + 1 : flexLeave,
       },
     };
   };
@@ -140,7 +138,6 @@ export default ({ taskIds }) => {
           working: 0,
           vacation: 0,
           unpaidLeave: 0,
-          flexLeave: 0,
         },
         hours: 0,
         billableHours: 0,
@@ -161,7 +158,6 @@ export default ({ taskIds }) => {
     sickLeaveHours: recordedHours.sickLeaveHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
-    flexLeaveDays: recordedHours.daysCount.flexLeave,
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,
   });
