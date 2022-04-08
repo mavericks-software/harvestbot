@@ -90,7 +90,6 @@ describe('Analyzer', () => {
   describe('getHoursStats', () => {
     it('should get hours stats', () => expect(getHoursStats(mockTask, 3))
       .toEqual({
-        absentDays: 1,
         billableHours: 16,
         billablePercentage: 100,
         days: 2,

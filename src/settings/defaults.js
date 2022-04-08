@@ -7,7 +7,6 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Project',
   'Billable%',
   'Plus / minus',
-  'Absence days',
   'Sick days',
   'Vacation days',
   'Unpaid vacation days',
