@@ -10,6 +10,7 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Sick leave hours',
   'Paid vacation days',
   'Unpaid vacation days',
+  'Paid vacation dates',
   'Marked days',
   'Missing days',
 ];

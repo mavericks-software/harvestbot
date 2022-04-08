@@ -1,3 +1,4 @@
+import moment from 'moment';
 import cal from '../calendar';
 
 export default ({ taskIds }) => {
@@ -118,6 +119,9 @@ export default ({ taskIds }) => {
           && !result.projectNames.includes(entry.projectName);
         return {
           ...(dayInfo.isCalendarWorkingDay ? addDayStats(entry, result) : result),
+          vacationDates: isVacation(entry.taskId)
+            ? result.vacationDates.concat([moment(entry.date, 'YYYY-MM-DD').date()])
+            : result.vacationDates,
           hours: dayInfo.isWorkingOrSickDay
             ? result.hours + entry.hours
             : result.hours,
@@ -139,6 +143,7 @@ export default ({ taskIds }) => {
           vacation: 0,
           unpaidLeave: 0,
         },
+        vacationDates: [],
         hours: 0,
         billableHours: 0,
         sickLeaveHours: 0,
@@ -158,6 +163,7 @@ export default ({ taskIds }) => {
     sickLeaveHours: recordedHours.sickLeaveHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
+    vacationDates: recordedHours.vacationDates.sort().join(','),
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,
   });
