@@ -38,6 +38,7 @@ export default () => {
         vacation: parseInt(secretConfig.taskIds.vacation, 10),
         unpaidLeave: parseInt(secretConfig.taskIds.unpaidLeave, 10),
         sickLeave: parseInt(secretConfig.taskIds.sickLeave, 10),
+        sickLeaveChildsSickness: parseInt(secretConfig.taskIds.sickLeaveChildsSickness, 10),
         flexLeave: parseInt(secretConfig.taskIds.flexLeave, 10),
       },
       currentTime: new Date().getTime() / 1000,

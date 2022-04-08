@@ -8,7 +8,8 @@ export default ({ taskIds }) => {
   const isVacation = (taskId) => taskId === taskIds.vacation;
   const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
-  const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
+  const isSickLeave = (taskId) => taskId === taskIds.sickLeave
+    || taskId === taskIds.sickLeaveChildsSickness;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
     || isVacation(taskId)
     || isUnpaidLeave(taskId);
@@ -79,7 +80,6 @@ export default ({ taskIds }) => {
       dates,
       daysCount: {
         working,
-        sickLeave,
         vacation,
         unpaidLeave,
         flexLeave,
@@ -92,7 +92,6 @@ export default ({ taskIds }) => {
       dates: [...dates, entry.date],
       daysCount: {
         working: isHoliday(entry.taskId) ? working : working + 1,
-        sickLeave: isSickLeave(entry.taskId) ? sickLeave + 1 : sickLeave,
         vacation: isVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
         flexLeave: isFlexLeave(entry.taskId) ? flexLeave + 1 : flexLeave,
@@ -127,6 +126,9 @@ export default ({ taskIds }) => {
           billableHours: dayInfo.isBillable
             ? result.billableHours + entry.hours
             : result.billableHours,
+          sickLeaveHours: isSickLeave(entry.taskId)
+            ? result.sickLeaveHours + entry.hours
+            : result.sickLeaveHours,
           projectNames: projectNotAdded
             ? [...result.projectNames, entry.projectName]
             : result.projectNames,
@@ -136,13 +138,13 @@ export default ({ taskIds }) => {
         dates: [],
         daysCount: {
           working: 0,
-          sickLeave: 0,
           vacation: 0,
           unpaidLeave: 0,
           flexLeave: 0,
         },
         hours: 0,
         billableHours: 0,
+        sickLeaveHours: 0,
         projectNames: [],
       },
     ),
@@ -156,7 +158,7 @@ export default ({ taskIds }) => {
     projectName: recordedHours.projectNames.join(),
     billablePercentage: (recordedHours.billableHours / recordedHours.hours) * 100,
     flexSaldo: recordedHours.hours - hoursPerCalendar,
-    sickDays: recordedHours.daysCount.sickLeave,
+    sickLeaveHours: recordedHours.sickLeaveHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
     flexLeaveDays: recordedHours.daysCount.flexLeave,

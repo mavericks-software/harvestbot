@@ -54,6 +54,7 @@ describe('Analyzer', () => {
       vacation: '',
       unpaidLeave: '',
       sickLeave: '',
+      sickLeaveChildsSickness: '',
       flexLeave: 'flexLeaveTaskId',
     },
   };

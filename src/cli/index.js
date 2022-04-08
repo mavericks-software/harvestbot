@@ -58,6 +58,7 @@ export default (config, http) => {
     console.log(`export TASK_ID_VACATION=${conf.taskIds.vacation}`);
     console.log(`export TASK_ID_UNPAID_LEAVE=${conf.taskIds.unpaidLeave}`);
     console.log(`export TASK_ID_SICK_LEAVE=${conf.taskIds.sickLeave}`);
+    console.log(`export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=${conf.taskIds.sickLeaveChildsSickness}`);
     console.log(`export TASK_ID_FLEX_LEAVE=${conf.taskIds.flexLeave}`);
     /* eslint-enable no-console */
   };

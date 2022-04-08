@@ -94,6 +94,8 @@ export TASK_ID_VACATION=124
 export TASK_ID_UNPAID_LEAVE=125
 # Task id for sick leave
 export TASK_ID_SICK_LEAVE=126
+# Task if for sick leave - child's sickness)
+export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=18406328
 # Task id for flex leave
 export TASK_ID_FLEX_LEAVE=321
 
