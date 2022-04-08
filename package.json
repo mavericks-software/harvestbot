@@ -42,6 +42,7 @@
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.23",
     "luxon": "^1.25.0",
+    "moment": "^2.29.2",
     "rxjs": "6.5.4",
     "winston": "3.2.1",
     "xlsx": "0.16.0"

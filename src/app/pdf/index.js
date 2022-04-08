@@ -1,3 +1,4 @@
+import moment from 'moment';
 import JSPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -8,7 +9,11 @@ export default function writeBillingReport(
   projectEntries,
 ) {
   const hoursTotal = projectEntries.reduce((total, entry) => total + entry.hours, 0);
-  const entryRows = projectEntries.map((entry) => [entry.date, entry.notes, entry.hours]);
+  const entryRows = projectEntries.map((entry) => [
+    moment(entry.date, 'YYYY-MM-DD').format('DD.MM.YYYY'),
+    entry.notes,
+    entry.hours,
+  ]);
 
   const doc = new JSPDF();
   doc.setFont('Helvetica', 'normal');

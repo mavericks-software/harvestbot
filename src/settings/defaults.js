@@ -7,13 +7,13 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Project',
   'Billable%',
   'Plus / minus',
-  'Absence days',
-  'Sick days',
-  'Vacation days',
+  'Sick leave hours',
+  'Paid vacation days',
   'Unpaid vacation days',
-  'Flex days',
+  'Paid vacation dates',
   'Marked days',
-  'Missing days'];
+  'Missing days',
+];
 
 export const DEFAULT_BILLABLE_STATS_COLUMN_HEADERS = [
   'Project',
@@ -22,4 +22,5 @@ export const DEFAULT_BILLABLE_STATS_COLUMN_HEADERS = [
   'Consultant',
   'Hours',
   'EUR',
-  'Avg hour rate'];
+  'Avg hour rate',
+];

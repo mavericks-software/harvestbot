@@ -1,3 +1,4 @@
+import moment from 'moment';
 import cal from '../calendar';
 
 export default ({ taskIds }) => {
@@ -8,12 +9,12 @@ export default ({ taskIds }) => {
   const isVacation = (taskId) => taskId === taskIds.vacation;
   const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
-  const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
+  const isSickLeave = (taskId) => taskId === taskIds.sickLeave
+    || taskId === taskIds.sickLeaveChildsSickness;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
     || isVacation(taskId)
     || isUnpaidLeave(taskId);
   const isHolidayOrFlex = (taskId) => isHoliday(taskId) || isFlexLeave(taskId);
-  const isAbsence = (taskId) => isHolidayOrFlex(taskId) || isSickLeave(taskId);
 
   const getPeriodRangeEnd = (entriesDate, latestFullDate, today = new Date()) => (
     calendar.datesEqual(entriesDate, today)
@@ -80,11 +81,8 @@ export default ({ taskIds }) => {
       dates,
       daysCount: {
         working,
-        absence,
-        sickLeave,
         vacation,
         unpaidLeave,
-        flexLeave,
       },
     } = result;
     if (dates.includes(entry.date)) {
@@ -94,11 +92,8 @@ export default ({ taskIds }) => {
       dates: [...dates, entry.date],
       daysCount: {
         working: isHoliday(entry.taskId) ? working : working + 1,
-        absence: isAbsence(entry.taskId) ? absence + 1 : absence,
-        sickLeave: isSickLeave(entry.taskId) ? sickLeave + 1 : sickLeave,
         vacation: isVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
-        flexLeave: isFlexLeave(entry.taskId) ? flexLeave + 1 : flexLeave,
       },
     };
   };
@@ -124,12 +119,18 @@ export default ({ taskIds }) => {
           && !result.projectNames.includes(entry.projectName);
         return {
           ...(dayInfo.isCalendarWorkingDay ? addDayStats(entry, result) : result),
+          vacationDates: isVacation(entry.taskId)
+            ? result.vacationDates.concat([moment(entry.date, 'YYYY-MM-DD').date()])
+            : result.vacationDates,
           hours: dayInfo.isWorkingOrSickDay
             ? result.hours + entry.hours
             : result.hours,
           billableHours: dayInfo.isBillable
             ? result.billableHours + entry.hours
             : result.billableHours,
+          sickLeaveHours: isSickLeave(entry.taskId)
+            ? result.sickLeaveHours + entry.hours
+            : result.sickLeaveHours,
           projectNames: projectNotAdded
             ? [...result.projectNames, entry.projectName]
             : result.projectNames,
@@ -139,14 +140,13 @@ export default ({ taskIds }) => {
         dates: [],
         daysCount: {
           working: 0,
-          absence: 0,
-          sickLeave: 0,
           vacation: 0,
           unpaidLeave: 0,
-          flexLeave: 0,
         },
+        vacationDates: [],
         hours: 0,
         billableHours: 0,
+        sickLeaveHours: 0,
         projectNames: [],
       },
     ),
@@ -160,11 +160,10 @@ export default ({ taskIds }) => {
     projectName: recordedHours.projectNames.join(),
     billablePercentage: (recordedHours.billableHours / recordedHours.hours) * 100,
     flexSaldo: recordedHours.hours - hoursPerCalendar,
-    absentDays: recordedHours.daysCount.absence,
-    sickDays: recordedHours.daysCount.sickLeave,
+    sickLeaveHours: recordedHours.sickLeaveHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
-    flexLeaveDays: recordedHours.daysCount.flexLeave,
+    vacationDates: recordedHours.vacationDates.sort().join(','),
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,
   });

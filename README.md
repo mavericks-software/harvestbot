@@ -94,6 +94,8 @@ export TASK_ID_VACATION=124
 export TASK_ID_UNPAID_LEAVE=125
 # Task id for sick leave
 export TASK_ID_SICK_LEAVE=126
+# Task if for sick leave - child's sickness)
+export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=18406328
 # Task id for flex leave
 export TASK_ID_FLEX_LEAVE=321
 
@@ -176,10 +178,11 @@ terraform apply
 ### Integrate bot to Slack
 
 1. [Create new Slack App](https://api.slack.com/apps)
-1. Configure the slash command that will trigger your bot in "Slash Commands" tab. The request URL you can fill out later when you have the cloud functions in place.
-1. Add permissions for scopes **chat:write**, **commands**, **users:read** and **users:read.email** to be able to send messages to your workspace and get the users email address.
-1. Install the app to your workspace.
-1. Record the Slack signing secret and OAuth access token for configuration in later step.
+2. From the "App Home" tab: make sure that "Messages tab" is turned on and that the "Allow users to send Slash commands and messages from the messages tab" checkbox is selected
+2. Configure the slash command that will trigger your bot in the "Slash Commands" tab. The request URL you can fill out later when you have the cloud functions in place.
+3. Add permissions for scopes **commands**, **chat:write**, **im:write**, **mpim:write**, **users:read** and **users:read.email** to be able to send messages to your workspace and get the users email addresses.
+5. Install the app to your workspace.
+6. Record the Slack signing secret and OAuth access token for configuration in later step.
 
 ### Storing encrypted app configuration
 
