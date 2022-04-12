@@ -5,15 +5,33 @@ import autoTable from 'jspdf-autotable';
 export default function writeBillingReport(
   filePath,
   user,
-  projectName,
   projectEntries,
 ) {
-  const hoursTotal = projectEntries.reduce((total, entry) => total + entry.hours, 0);
-  const entryRows = projectEntries.map((entry) => [
-    moment(entry.date, 'YYYY-MM-DD').format('DD.MM.YYYY'),
-    entry.notes,
-    entry.hours,
-  ]);
+  const taskIds = Object.keys(projectEntries.tasks);
+  const writeTaskHeaders = taskIds.length > 0;
+  const headerIndexes = [];
+  const entryRows = taskIds.reduce((rows, taskId) => {
+    const taskEntries = projectEntries.tasks[taskId];
+    if (writeTaskHeaders) {
+      rows.push([
+        {
+          content: taskEntries.taskName,
+          colSpan: 2,
+        },
+        {
+          content: taskEntries.totalHours.toFixed(2),
+          styles: { halign: 'right' },
+        },
+      ]);
+      headerIndexes.push(rows.length - 1);
+    }
+    taskEntries.entries.forEach((entry) => rows.push([
+      moment(entry.date, 'YYYY-MM-DD').format('DD.MM.YYYY'),
+      entry.notes,
+      entry.hours,
+    ]));
+    return rows;
+  }, []);
 
   const doc = new JSPDF();
   doc.setFont('Helvetica', 'normal');
@@ -33,14 +51,18 @@ export default function writeBillingReport(
     showHead: 'never',
     body: [
       ['Consultant', `${user.firstName} ${user.lastName}`, '', ''],
-      ['Project', projectName, '', ''],
-      ['Total hours', hoursTotal, '', ''],
+      ['Project', projectEntries.projectName, '', ''],
+      ['Total hours', projectEntries.totalHours, '', ''],
     ],
   });
 
   autoTable(doc, {
-    theme: 'striped',
-    headStyles: { fillColor: [220, 220, 220], textColor: [0, 0, 0] },
+    theme: 'plain',
+    headStyles: {
+      fontStyle: 'normal',
+      fillColor: [220, 220, 220],
+      textColor: [0, 0, 0],
+    },
     didParseCell: (hookData) => {
       if (hookData.section === 'head') {
         if (hookData.column.dataKey === 2) {
@@ -48,16 +70,20 @@ export default function writeBillingReport(
           hookData.cell.styles.halign = 'right';
         }
       }
+      if (headerIndexes.includes(hookData.row.index) || hookData.row.index === entryRows.length) {
+        // eslint-disable-next-line no-param-reassign
+        hookData.cell.styles.fillColor = [220, 220, 220];
+      }
     },
-    alternateRowStyles: { fillColor: [220, 220, 220] },
     columnStyles: { 2: { halign: 'right' } },
     head: [['Date', 'Notes', 'Hours']],
     body: [
       ...entryRows,
-      ['', '',
+      ['',
         {
-          content: `Total ${hoursTotal}`,
-          styles: { fontStyle: 'bold' },
+          content: `Total ${projectEntries.totalHours.toFixed(2)}`,
+          styles: { halign: 'right' },
+          colSpan: 2,
         },
       ],
     ],
