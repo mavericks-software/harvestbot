@@ -189,12 +189,17 @@ export default (config, http) => {
     return `Stats sent to email ${authorisedUser.email}.`;
   };
 
-  const sortEntriesByProjectAndDate = (entries) => entries
+  const sortEntriesByProjectAndTask = (entries) => entries
     .sort((a, b) => a.date.localeCompare(b.date))
     .reduce((previous, entry) => {
       const result = previous;
-      result[entry.projectId] = result[entry.projectId] || [];
-      result[entry.projectId].push(entry);
+      result[entry.projectId] = result[entry.projectId]
+        || { projectName: entry.projectName, totalHours: 0, tasks: {} };
+      result[entry.projectId].totalHours += entry.hours;
+      result[entry.projectId].tasks[entry.taskId] = result[entry.projectId].tasks[entry.taskId]
+        || { taskName: entry.taskName, totalHours: 0, entries: [] };
+      result[entry.projectId].tasks[entry.taskId].totalHours += entry.hours;
+      result[entry.projectId].tasks[entry.taskId].entries.push(entry);
       return result;
     }, {});
 
@@ -226,20 +231,18 @@ export default (config, http) => {
           firstName: monthlyEntries.user.first_name,
           lastName: monthlyEntries.user.last_name,
         },
-        entries: sortEntriesByProjectAndDate(monthlyEntries.entries),
+        entries: sortEntriesByProjectAndTask(monthlyEntries.entries),
       }));
 
     const reportPaths = [];
     entries.forEach((userEntries) => {
       Object.keys(userEntries.entries).forEach((projectId) => {
         const projectEntries = userEntries.entries[projectId];
-        // eslint-disable-next-line prefer-destructuring
-        const projectName = projectEntries[0].projectName;
-        const escapedProjectName = projectName.replace(/(\W+)/gi, '_');
+        const escapedProjectName = projectEntries.projectName.replace(/(\W+)/gi, '_');
         const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.pdf`;
         const filePath = `${tmpdir()}/${fileName}`;
         logger.info(`Writing report to ${filePath}`);
-        writeBillingReport(filePath, userEntries.user, projectName, projectEntries);
+        writeBillingReport(filePath, userEntries.user, projectEntries);
         reportPaths.push(filePath);
       });
     });
