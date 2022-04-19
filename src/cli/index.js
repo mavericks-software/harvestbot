@@ -36,7 +36,7 @@ export default (config, http) => {
 
   const sendMonthlyReminders = async (email, year, month) => {
     logger.info(`Sending monthly reminder for ${year}-${month} to ${email}`);
-    await app.sendMonthlyReminders(year, month, email);
+    await app.sendMonthlyReminders(year, month, email, false);
   };
 
   const calcFlexTime = async (email) => {

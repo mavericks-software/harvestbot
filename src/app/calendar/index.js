@@ -2,10 +2,12 @@ import finnishholidays from 'finnish-holidays-js';
 
 export default () => {
   const HOURS_IN_DAY = 7.5;
+  const ONE_DAY = 24 * 60 * 60 * 1000;
 
   const CURRENT_DATE = new Date();
   const CURRENT_MONTH = CURRENT_DATE.getMonth();
   const CURRENT_YEAR = CURRENT_DATE.getFullYear();
+  const IS_LAST_DAY_OF_MONTH = (new Date(CURRENT_DATE.getTime() + ONE_DAY).getDate()) === 1;
 
   const isWeekLeave = (date) => date.getDay() === 0 || date.getDay() === 6;
 
@@ -61,6 +63,7 @@ export default () => {
   return {
     CURRENT_MONTH,
     CURRENT_YEAR,
+    IS_LAST_DAY_OF_MONTH,
     HOURS_IN_DAY,
     datesEqual,
     isWorkingDay,

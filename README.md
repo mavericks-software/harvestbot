@@ -244,6 +244,10 @@ Weekly flextime notifications can be triggered using through HTTP interface. See
 
 ### Trigger monthly reminders via Cloud Scheduler
 
-gcloud scheduler jobs create http sendReminders --schedule="*/15 * * * *" --uri=<sendReminders http trigger url> --oidc-service-account-email=<gcloud_project_id>@appspot.gserviceaccount.com
+As of 04/2022, the Google Cloud Scheduler only supports the basic cron syntax, so it is not possible to run a job every last day of the month. We have to run the job every day and check if it is the last day of the month in the triggered function.
 
-gcloud scheduler jobs create http sendReminders --schedule="*/15 * * * *" --uri=https://europe-west3-harvestbot-331714.cloudfunctions.net/sendReminders --oidc-service-account-email=harvestbot-331714@appspot.gserviceaccount.com
+* Trigger monthly reminders function every day at 13:00 and 18:00
+```
+gcloud scheduler jobs create http firstReminder --schedule="0 13 * * *" --time-zone Europe/Helsinki --uri=<sendReminders http trigger url> --oidc-service-account-email=<gcloud_project_id>@appspot.gserviceaccount.com
+gcloud scheduler jobs create http secondReminder --schedule="0 18 * * *" --time-zone Europe/Helsinki --uri=<sendReminders http trigger url> --oidc-service-account-email=<gcloud_project_id>@appspot.gserviceaccount.com
+```

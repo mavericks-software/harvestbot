@@ -281,28 +281,34 @@ export default (config, http, slack) => {
     yearArg,
     monthArg,
     emailArg,
+    checkIfLastDayOfMonth = true,
   ) => {
-    const year = yearArg ? parseInt(yearArg, 10) : calendar.CURRENT_YEAR;
-    const month = monthArg ? parseInt(monthArg, 10) : calendar.CURRENT_MONTH + 1;
-    const users = (await tracker.getUsers())
-      .filter((user) => user.is_active && (!emailArg || emailArg === user.email));
-    const entries = await tracker.getMonthlyTimeEntries(year, month);
-    const workingDays = calendar.getWorkingDaysForMonth(year, month);
+    if (!checkIfLastDayOfMonth || calendar.IS_LAST_DAY_OF_MONTH) {
+      const year = yearArg ? parseInt(yearArg, 10) : calendar.CURRENT_YEAR;
+      const month = monthArg ? parseInt(monthArg, 10) : calendar.CURRENT_MONTH + 1;
+      const users = (await tracker.getUsers())
+        .filter((user) => user.is_active && (!emailArg || emailArg === user.email));
+      const entries = await tracker.getMonthlyTimeEntries(year, month);
+      const workingDays = calendar.getWorkingDaysForMonth(year, month);
 
-    const missingDatesByUser = users.reduce((result, user) => {
-      const datesWithEntries = entries
-        .filter((entry) => entry.user.id === user.id)
-        .map((entry) => entry.spent_date);
-      const missingDates = workingDays
-        .map((date) => date.toISOString().split('T')[0])
-        .filter((date) => !datesWithEntries.includes(date));
-      return missingDates.length > 0
-        ? { ...result, [user.email]: missingDates }
-        : result;
-    }, {});
+      const missingDatesByUser = users.reduce((result, user) => {
+        const datesWithEntries = entries
+          .filter((entry) => entry.user.id === user.id)
+          .map((entry) => entry.spent_date);
+        const missingDates = workingDays
+          .map((date) => date.toISOString().split('T')[0])
+          .filter((date) => !datesWithEntries.includes(date));
+        return missingDates.length > 0
+          ? { ...result, [user.email]: missingDates }
+          : result;
+      }, {});
 
-    await Promise.all(Object.keys(missingDatesByUser)
-      .map((email) => sendSlackReminder(email, missingDatesByUser[email])));
+      await Promise.all(Object.keys(missingDatesByUser)
+        .map((email) => sendSlackReminder(email, missingDatesByUser[email])));
+      logger.info('Monthly reminders sent');
+    } else {
+      logger.info('It is not the last day of month, reminders not sent');
+    }
   };
 
   return {

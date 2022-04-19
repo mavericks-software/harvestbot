@@ -180,6 +180,5 @@ export const sendReminders = async (req, res) => {
   const config = await getAppConfig();
   const slack = slackApi(config, http);
   await application(config, http, slack).sendMonthlyReminders();
-  logger.info('Monthly reminders sent');
-  return res.json({ text: 'Monthly reminders sent' });
+  return res.json({ text: 'Monthly reminders triggered succesfully' });
 };
