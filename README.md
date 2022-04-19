@@ -29,9 +29,13 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 Statistics sheet displays work time statistics for each company employee. The second tab gives detailed information for billable hours that can be used as the basis for billing.
 
-**Generate monthly billing reports send it via email to current Slack user**
+**Generate time report PDFs and send them via email to the current Slack user**
+
+The report command identifies users by their last names and generates a monthly PDF report for every project for which they have billable entries in the given month. The reports will then be sent via email to the user that entered the command.
 
 ```/flextime report 2019 3 virtanen meikäläinen```
+
+![Monthly report example](./docs/report-slack.png "Report example")
 
 ## Development
 
