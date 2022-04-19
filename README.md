@@ -232,6 +232,7 @@ gcloud functions deploy initFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJE
 gcloud functions deploy calcFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic flextime
 gcloud functions deploy calcStats --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic stats
 gcloud functions deploy calcReports --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic reports
+gcloud functions deploy sendReminders --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-http
 gcloud functions deploy notifyUsers --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
 ```
 
@@ -240,3 +241,9 @@ When the deployment is done, copy the URL for initFlextime-function (from Google
 ### Trigger notifications
 
 Weekly flextime notifications can be triggered using through HTTP interface. See the CI configuration of this project for an example.
+
+### Trigger monthly reminders via Cloud Scheduler
+
+gcloud scheduler jobs create http sendReminders --schedule="*/15 * * * *" --uri=<sendReminders http trigger url> --oidc-service-account-email=<gcloud_project_id>@appspot.gserviceaccount.com
+
+gcloud scheduler jobs create http sendReminders --schedule="*/15 * * * *" --uri=https://europe-west3-harvestbot-331714.cloudfunctions.net/sendReminders --oidc-service-account-email=harvestbot-331714@appspot.gserviceaccount.com
