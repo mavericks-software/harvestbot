@@ -175,3 +175,10 @@ export const calcReports = async (message) => {
   }
   return logger.error('Cannot find Slack user id');
 };
+
+export const sendReminders = async (req, res) => {
+  const config = await getAppConfig();
+  const slack = slackApi(config, http);
+  await application(config, http, slack).sendMonthlyReminders();
+  return res.json({ text: 'Monthly reminders triggered succesfully' });
+};

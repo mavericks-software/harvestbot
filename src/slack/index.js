@@ -23,6 +23,10 @@ export default (config, http, responseUrl) => {
     )
     .toPromise();
 
+  const getUserInfoForEmail = async (email) => api
+    .getJson(`users.lookupByEmail?email=${email}`)
+    .toPromise();
+
   const postResponse = (header, messageArray) => api
     .postJson(responseUrl, { text: header, attachments: messageArray ? [{ text: messageArray.join('\n') }] : [] })
     .toPromise();
@@ -40,7 +44,13 @@ export default (config, http, responseUrl) => {
     : postToChannel(config.notifyChannelId, userId, header, messages)
   );
 
+  const postDirectMessage = (userId, message) => api
+    .postJson('/chat.postMessage', {
+      channel: userId,
+      text: message,
+    }).toPromise();
+
   return {
-    getUserEmailForId, postMessage,
+    getUserEmailForId, getUserInfoForEmail, postMessage, postDirectMessage,
   };
 };

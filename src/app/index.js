@@ -10,7 +10,7 @@ import harvest from './harvest';
 import emailer from './emailer';
 import writeBillingReport from './pdf';
 
-export default (config, http) => {
+export default (config, http, slack) => {
   const logger = log(config);
   const formatDate = (date) => date.toLocaleDateString(
     'en-US',
@@ -100,7 +100,7 @@ export default (config, http) => {
     year,
     month,
   ) => {
-    const workDaysInMonth = calendar.getWorkingDaysForMonth(year, month);
+    const workDaysInMonth = calendar.getWorkingDaysTotalForMonth(year, month);
     return [
       { name: 'CALENDAR DAYS', days: workDaysInMonth },
       {},
@@ -252,9 +252,69 @@ export default (config, http) => {
     return `Reports sent to email ${authorisedUser.email}.`;
   };
 
+  const sendSlackReminder = async (email, missingDates) => {
+    const userInfo = await slack.getUserInfoForEmail(email);
+    if (userInfo.ok) {
+      if (!userInfo.deleted && !userInfo.is_restricted && !userInfo.is_ultra_restricted) {
+        const dateList = missingDates.map((date) => `- ${date}`).join('\n');
+        const message = 'Hi!\n\n'
+          + 'Based on my AI-based algorithm, you have hours missing from Harvest and this is the last day of the month. '
+          + 'Please be sure to fill in your hours by the end of the day!\n\n'
+          + 'The dates with missing hours are:\n'
+          + `${dateList}\n\n`
+          + 'Remember, no one expects the Spanish Inquistion.';
+        const response = await slack.postDirectMessage(userInfo.user.id, message);
+        if (response.ok) {
+          logger.info(`Sent Slack reminder to ${email}`);
+        } else {
+          logger.error(`Sending Slack reminder to ${email} failed: ${response.error}`);
+        }
+      } else {
+        logger.error(`Slack user ${email} has been deleted or is a quest user, reminder not sent`);
+      }
+    } else {
+      logger.error(`No Slack user info found for ${email}`);
+    }
+  };
+
+  const sendMonthlyReminders = async (
+    yearArg,
+    monthArg,
+    emailArg,
+    checkIfLastDayOfMonth = true,
+  ) => {
+    if (!checkIfLastDayOfMonth || calendar.IS_LAST_DAY_OF_MONTH) {
+      const year = yearArg ? parseInt(yearArg, 10) : calendar.CURRENT_YEAR;
+      const month = monthArg ? parseInt(monthArg, 10) : calendar.CURRENT_MONTH + 1;
+      const users = (await tracker.getUsers())
+        .filter((user) => user.is_active && (!emailArg || emailArg === user.email));
+      const entries = await tracker.getMonthlyTimeEntries(year, month);
+      const workingDays = calendar.getWorkingDaysForMonth(year, month);
+
+      const missingDatesByUser = users.reduce((result, user) => {
+        const datesWithEntries = entries
+          .filter((entry) => entry.user.id === user.id)
+          .map((entry) => entry.spent_date);
+        const missingDates = workingDays
+          .map((date) => date.toISOString().split('T')[0])
+          .filter((date) => !datesWithEntries.includes(date));
+        return missingDates.length > 0
+          ? { ...result, [user.email]: missingDates }
+          : result;
+      }, {});
+
+      await Promise.all(Object.keys(missingDatesByUser)
+        .map((email) => sendSlackReminder(email, missingDatesByUser[email])));
+      logger.info('Monthly reminders sent');
+    } else {
+      logger.info('It is not the last day of month, reminders not sent');
+    }
+  };
+
   return {
     calcFlextime,
     generateStats,
     generateReports,
+    sendMonthlyReminders,
   };
 };

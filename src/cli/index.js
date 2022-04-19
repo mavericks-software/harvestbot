@@ -4,13 +4,15 @@ import configuration from 'config';
 /* eslint-enable import/no-extraneous-dependencies */
 
 import application from '../app';
+import slackApi from '../slack';
 import log from '../log';
 import encrypter from '../cloud/key-ring';
 import { version } from '../../package.json';
 
 export default (config, http) => {
   const logger = log(config);
-  const app = application(config, http);
+  const slack = slackApi(config, http);
+  const app = application(config, http, slack);
   const { encryptSecret, decryptSecret } = encrypter(config);
 
   const printResponse = (header, msgs) => {
@@ -30,6 +32,11 @@ export default (config, http) => {
     logger.info(`Generating reports for ${year}-${month}`);
     await app.generateReports(year, month, lastNames, email);
     logger.info(`Sent report to ${email}`);
+  };
+
+  const sendMonthlyReminders = async (email, year, month) => {
+    logger.info(`Sending monthly reminder for ${year}-${month} to ${email}`);
+    await app.sendMonthlyReminders(year, month, email, false);
   };
 
   const calcFlexTime = async (email) => {
@@ -78,6 +85,10 @@ export default (config, http) => {
       .command('flextime <email>')
       .description('Calculate flex saldo for given user.')
       .action(calcFlexTime);
+    program
+      .command('remind <email> <year> <month>')
+      .description('Send monthly reminder for given user.')
+      .action(sendMonthlyReminders);
     program
       .command('encrypt')
       .description('Encrypt and store app configuration.')
