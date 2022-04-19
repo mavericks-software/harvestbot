@@ -8,6 +8,7 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Billable%',
   'Plus / minus',
   'Sick leave hours',
+  'Sick leave (child\'s sickness) hours',
   'Paid vacation days',
   'Unpaid vacation days',
   'Paid vacation dates',

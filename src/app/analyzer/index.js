@@ -9,8 +9,8 @@ export default ({ taskIds }) => {
   const isVacation = (taskId) => taskId === taskIds.vacation;
   const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
-  const isSickLeave = (taskId) => taskId === taskIds.sickLeave
-    || taskId === taskIds.sickLeaveChildsSickness;
+  const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
+  const isChildsSickness = (taskId) => taskId === taskIds.sickLeaveChildsSickness;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
     || isVacation(taskId)
     || isUnpaidLeave(taskId);
@@ -49,15 +49,15 @@ export default ({ taskIds }) => {
       const entryDate = new Date(entry.date);
       const ignoredTask = isPublicHoliday(entry.taskId) || isFlexLeave(entry.taskId);
       const ignoreFromTotal = ignoredTask;
-      const isCurrenMonthEntry = !ignoreFromTotal && isCurrentMonth(entryDate);
+      const isCurrentMonthEntry = !ignoreFromTotal && isCurrentMonth(entryDate);
 
       return {
         ...result,
         total: ignoredTask ? result.total : result.total + entry.hours,
-        billable: isCurrenMonthEntry && entry.billable
+        billable: isCurrentMonthEntry && entry.billable
           ? result.billable + entry.hours
           : result.billable,
-        nonBillable: isCurrenMonthEntry && !entry.billable
+        nonBillable: isCurrentMonthEntry && !entry.billable
           ? result.nonBillable + entry.hours
           : result.nonBillable,
       };
@@ -114,7 +114,6 @@ export default ({ taskIds }) => {
     recordedHours = entries.reduce(
       (result, entry) => {
         const dayInfo = getDayInfo(entry);
-
         const projectNotAdded = dayInfo.isBillable
           && !result.projectNames.includes(entry.projectName);
         return {
@@ -131,6 +130,9 @@ export default ({ taskIds }) => {
           sickLeaveHours: isSickLeave(entry.taskId)
             ? result.sickLeaveHours + entry.hours
             : result.sickLeaveHours,
+          childsSicknessHours: isChildsSickness(entry.taskId)
+            ? result.childsSicknessHours + entry.hours
+            : result.childsSicknessHours,
           projectNames: projectNotAdded
             ? [...result.projectNames, entry.projectName]
             : result.projectNames,
@@ -147,6 +149,7 @@ export default ({ taskIds }) => {
         hours: 0,
         billableHours: 0,
         sickLeaveHours: 0,
+        childsSicknessHours: 0,
         projectNames: [],
       },
     ),
@@ -161,6 +164,7 @@ export default ({ taskIds }) => {
     billablePercentage: (recordedHours.billableHours / recordedHours.hours) * 100,
     flexSaldo: recordedHours.hours - hoursPerCalendar,
     sickLeaveHours: recordedHours.sickLeaveHours,
+    childsSicknessHours: recordedHours.childsSicknessHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
     vacationDates: recordedHours.vacationDates.sort().join(','),
