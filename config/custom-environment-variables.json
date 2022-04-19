@@ -14,6 +14,7 @@
     "unpaidLeave": "TASK_ID_UNPAID_LEAVE",
     "sickLeave": "TASK_ID_SICK_LEAVE",
     "sickLeaveChildsSickness": "TASK_ID_SICK_LEAVE_CHILDS_SICKNESS",
-    "flexLeave": "TASK_ID_FLEX_LEAVE"
+    "flexLeave": "TASK_ID_FLEX_LEAVE",
+    "productServiceDevelopment": "TASK_ID_PRODUCT_SERVICE_DEVELOPMENT"
   }
 }

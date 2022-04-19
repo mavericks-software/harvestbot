@@ -102,7 +102,8 @@ export TASK_ID_SICK_LEAVE=126
 export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=18406328
 # Task id for flex leave
 export TASK_ID_FLEX_LEAVE=321
-
+# Task id for product/service development
+export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=14245935
 ```
 
 ### Running locally

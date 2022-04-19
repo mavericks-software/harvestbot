@@ -11,6 +11,7 @@ export default ({ taskIds }) => {
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
   const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
   const isChildsSickness = (taskId) => taskId === taskIds.sickLeaveChildsSickness;
+  const isProductServiceDevelopment = (taskId) => taskId === taskIds.productServiceDevelopment;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
     || isVacation(taskId)
     || isUnpaidLeave(taskId);
@@ -133,6 +134,9 @@ export default ({ taskIds }) => {
           childsSicknessHours: isChildsSickness(entry.taskId)
             ? result.childsSicknessHours + entry.hours
             : result.childsSicknessHours,
+          productServiceDevelopmentHours: isProductServiceDevelopment(entry.taskId)
+            ? result.productServiceDevelopmentHours + entry.hours
+            : result.productServiceDevelopmentHours,
           projectNames: projectNotAdded
             ? [...result.projectNames, entry.projectName]
             : result.projectNames,
@@ -150,6 +154,7 @@ export default ({ taskIds }) => {
         billableHours: 0,
         sickLeaveHours: 0,
         childsSicknessHours: 0,
+        productServiceDevelopmentHours: 0,
         projectNames: [],
       },
     ),
@@ -165,6 +170,7 @@ export default ({ taskIds }) => {
     flexSaldo: recordedHours.hours - hoursPerCalendar,
     sickLeaveHours: recordedHours.sickLeaveHours,
     childsSicknessHours: recordedHours.childsSicknessHours,
+    productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
     vacationDates: recordedHours.vacationDates.sort().join(','),
