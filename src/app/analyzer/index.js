@@ -8,6 +8,7 @@ export default ({ taskIds }) => {
   const isPublicHoliday = (taskId) => taskId === taskIds.publicHoliday;
   const isVacation = (taskId) => taskId === taskIds.vacation;
   const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
+  const isParentalLeave = (taskId) => taskId === taskIds.parentalLeave;
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
   const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
   const isChildsSickness = (taskId) => taskId === taskIds.sickLeaveChildsSickness;
@@ -84,6 +85,7 @@ export default ({ taskIds }) => {
         working,
         vacation,
         unpaidLeave,
+        parentalLeave,
       },
     } = result;
     if (dates.includes(entry.date)) {
@@ -95,6 +97,7 @@ export default ({ taskIds }) => {
         working: isHoliday(entry.taskId) ? working : working + 1,
         vacation: isVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
+        parentalLeave: isParentalLeave(entry.taskId) ? parentalLeave + 1 : parentalLeave,
       },
     };
   };
@@ -148,6 +151,7 @@ export default ({ taskIds }) => {
           working: 0,
           vacation: 0,
           unpaidLeave: 0,
+          parentalLeave: 0,
         },
         vacationDates: [],
         hours: 0,
@@ -173,6 +177,7 @@ export default ({ taskIds }) => {
     productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
+    parentalLeave: recordedHours.daysCount.parentalLeave,
     vacationDates: recordedHours.vacationDates.sort().join(','),
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,

@@ -12,6 +12,7 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Product/service development, hours',
   'Paid vacation, days',
   'Unpaid vacation, days',
+  'Parental leave, days',
   'Paid vacation dates',
   'Marked days',
   'Missing days',

@@ -12,6 +12,7 @@
     "publicHoliday": "TASK_ID_PUBLIC_HOLIDAY",
     "vacation": "TASK_ID_VACATION",
     "unpaidLeave": "TASK_ID_UNPAID_LEAVE",
+    "parentalLeave": "TASK_ID_PARENTAL_LEAVE",
     "sickLeave": "TASK_ID_SICK_LEAVE",
     "sickLeaveChildsSickness": "TASK_ID_SICK_LEAVE_CHILDS_SICKNESS",
     "flexLeave": "TASK_ID_FLEX_LEAVE",
