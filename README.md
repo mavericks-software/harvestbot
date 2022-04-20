@@ -106,6 +106,8 @@ export TASK_ID_PARENTAL_LEAVE=18450208
 export TASK_ID_FLEX_LEAVE=321
 # Task id for product/service development
 export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=14245935
+# Task id for internally invoicable
+export TASK_ID_INTERNALLY_INVOICABLE=14655092
 ```
 
 ### Running locally

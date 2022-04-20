@@ -13,6 +13,7 @@ export default ({ taskIds }) => {
   const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
   const isChildsSickness = (taskId) => taskId === taskIds.sickLeaveChildsSickness;
   const isProductServiceDevelopment = (taskId) => taskId === taskIds.productServiceDevelopment;
+  const isInternallyInvoicable = (taskId) => taskId === taskIds.internallyInvoicable;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
     || isVacation(taskId)
     || isUnpaidLeave(taskId);
@@ -140,6 +141,9 @@ export default ({ taskIds }) => {
           productServiceDevelopmentHours: isProductServiceDevelopment(entry.taskId)
             ? result.productServiceDevelopmentHours + entry.hours
             : result.productServiceDevelopmentHours,
+          internallyInvoicableHours: isInternallyInvoicable(entry.taskId)
+            ? result.internallyInvoicableHours + entry.hours
+            : result.internallyInvoicableHours,
           projectNames: projectNotAdded
             ? [...result.projectNames, entry.projectName]
             : result.projectNames,
@@ -159,6 +163,7 @@ export default ({ taskIds }) => {
         sickLeaveHours: 0,
         childsSicknessHours: 0,
         productServiceDevelopmentHours: 0,
+        internallyInvoicableHours: 0,
         projectNames: [],
       },
     ),
@@ -172,9 +177,10 @@ export default ({ taskIds }) => {
     projectName: recordedHours.projectNames.join(),
     billablePercentage: (recordedHours.billableHours / recordedHours.hours) * 100,
     flexSaldo: recordedHours.hours - hoursPerCalendar,
+    internallyInvoicableHours: recordedHours.internallyInvoicableHours,
+    productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
     sickLeaveHours: recordedHours.sickLeaveHours,
     childsSicknessHours: recordedHours.childsSicknessHours,
-    productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
     parentalLeave: recordedHours.daysCount.parentalLeave,

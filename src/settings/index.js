@@ -40,6 +40,8 @@ export default () => {
         sickLeave: parseInt(secretConfig.taskIds.sickLeave, 10),
         sickLeaveChildsSickness: parseInt(secretConfig.taskIds.sickLeaveChildsSickness, 10),
         flexLeave: parseInt(secretConfig.taskIds.flexLeave, 10),
+        productServiceDevelopment: parseInt(secretConfig.taskIds.productServiceDevelopment, 10),
+        internallyInvoicable: parseInt(secretConfig.taskIds.internallyInvoicable, 10),
       },
       currentTime: new Date().getTime() / 1000,
     };

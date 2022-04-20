@@ -69,6 +69,7 @@ export default (config, http) => {
     console.log(`export TASK_ID_PARENTAL_LEAVE=${conf.taskIds.parentalLeave}`);
     console.log(`export TASK_ID_FLEX_LEAVE=${conf.taskIds.flexLeave}`);
     console.log(`export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=${conf.taskIds.productServiceDevelopment}`);
+    console.log(`export TASK_ID_INTERNALLY_INVOICABLE=${conf.taskIds.internallyInvoicable}`);
     /* eslint-enable no-console */
   };
 
