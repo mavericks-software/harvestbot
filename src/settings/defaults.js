@@ -14,6 +14,7 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Paid vacation, days',
   'Unpaid vacation, days',
   'Parental leave, days',
+  'Extra paid leave, days',
   'Paid vacation dates',
   'Marked days',
   'Missing days',

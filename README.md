@@ -104,6 +104,8 @@ export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=18406328
 export TASK_ID_PARENTAL_LEAVE=18450208
 # Task id for flex leave
 export TASK_ID_FLEX_LEAVE=321
+# Task id for extra paid leave
+export TASK_ID_EXTRA_PAID_LEAVE=13538291
 # Task id for product/service development
 export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=14245935
 # Task id for internally invoicable

@@ -16,6 +16,7 @@
     "sickLeave": "TASK_ID_SICK_LEAVE",
     "sickLeaveChildsSickness": "TASK_ID_SICK_LEAVE_CHILDS_SICKNESS",
     "flexLeave": "TASK_ID_FLEX_LEAVE",
+    "extraPaidLeave": "TASK_ID_EXTRA_PAID_LEAVE",
     "productServiceDevelopment": "TASK_ID_PRODUCT_SERVICE_DEVELOPMENT",
     "internallyInvoicable": "TASK_ID_INTERNALLY_INVOICABLE"
   }
