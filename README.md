@@ -29,7 +29,7 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 Statistics sheet displays work time statistics for each company employee. The second tab gives detailed information for billable hours that can be used as the basis for billing.
 
-**Generate time report PDFs and send them via email to the current Slack user**
+**Generate billing report PDFs and send them via email to the current Slack user**
 
 The report command identifies users by their last names and generates a monthly PDF report for every project for which they have billable entries in the given month. The reports will then be sent via email to the user that entered the command.
 
@@ -242,7 +242,7 @@ echo "Deploy functions"
 gcloud functions deploy initFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
 gcloud functions deploy calcFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic flextime
 gcloud functions deploy calcStats --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic stats
-gcloud functions deploy calcReports --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic reports
+gcloud functions deploy calcBillingReports --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic reports
 gcloud functions deploy sendReminders --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-http
 gcloud functions deploy notifyUsers --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
 ```

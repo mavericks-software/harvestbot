@@ -17,7 +17,7 @@ export default (config) => {
   const enqueueStatsRequest = (data) => pubsubClient
     .topic(topics.stats).publish(Buffer.from(JSON.stringify(data)));
 
-  const enqueueReportsRequest = (data) => pubsubClient
+  const enqueueBillingReportsRequest = (data) => pubsubClient
     .topic(topics.reports).publish(Buffer.from(JSON.stringify(data)));
 
   const enqueueWorkingHoursRequest = (data) => pubsubClient
@@ -26,7 +26,7 @@ export default (config) => {
   return {
     enqueueFlexTimeRequest,
     enqueueStatsRequest,
-    enqueueReportsRequest,
+    enqueueBillingReportsRequest,
     enqueueWorkingHoursRequest,
   };
 };

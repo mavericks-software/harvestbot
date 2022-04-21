@@ -28,10 +28,10 @@ export default (config, http) => {
     logger.info(`Sent stats report to ${email}`);
   };
 
-  const generateReports = async (email, year, month, lastNames) => {
-    logger.info(`Generating reports for ${year}-${month}`);
-    await app.generateReports(year, month, lastNames, email);
-    logger.info(`Sent report to ${email}`);
+  const generateBillingReports = async (email, year, month, lastNames) => {
+    logger.info(`Generating billing reports for ${year}-${month}`);
+    await app.generateBillingReports(year, month, lastNames, email);
+    logger.info(`Sent billing reports to ${email}`);
   };
 
   const generateWorkingHoursReport = async (email, year, month) => {
@@ -90,7 +90,7 @@ export default (config, http) => {
     program
       .command('report <email> <year> <month> <lastname...>')
       .description('Send monthly reports to given email address for the listed users.')
-      .action(generateReports);
+      .action(generateBillingReports);
     program
       .command('report <email> <year> <month>')
       .description('Send working hours report to given email address, the range is six months forward from the given month.')

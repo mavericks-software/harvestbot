@@ -203,7 +203,7 @@ export default (config, http, slack) => {
       return result;
     }, {});
 
-  const generateReports = async (
+  const generateBillingReports = async (
     yearArg,
     monthArg,
     lastNames,
@@ -241,7 +241,7 @@ export default (config, http, slack) => {
         const escapedProjectName = projectEntries.projectName.replace(/(\W+)/gi, '_');
         const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.pdf`;
         const filePath = `${tmpdir()}/${fileName}`;
-        logger.info(`Writing report to ${filePath}`);
+        logger.info(`Writing billing report to ${filePath}`);
         writeBillingReport(filePath, userEntries.user, projectEntries);
         reportPaths.push(filePath);
       });
@@ -249,7 +249,7 @@ export default (config, http, slack) => {
 
     await emailer(config).sendEmail(authorisedUser.email, 'Monthly harvest billing reports', `${year}-${month}`, reportPaths);
     reportPaths.forEach((path) => unlinkSync(path));
-    return `Reports sent to email ${authorisedUser.email}.`;
+    return `Billing reports sent to email ${authorisedUser.email}.`;
   };
 
   const generateWorkingHoursReport = async (
@@ -337,7 +337,7 @@ export default (config, http, slack) => {
   return {
     calcFlextime,
     generateStats,
-    generateReports,
+    generateBillingReports,
     generateWorkingHoursReport,
     sendMonthlyReminders,
   };
