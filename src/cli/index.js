@@ -92,7 +92,7 @@ export default (config, http) => {
       .description('Send monthly reports to given email address for the listed users.')
       .action(generateBillingReports);
     program
-      .command('report <email> <year> <month>')
+      .command('hours <email> <year> <month>')
       .description('Send working hours report to given email address, the range is six months forward from the given month.')
       .action(generateWorkingHoursReport);
     program

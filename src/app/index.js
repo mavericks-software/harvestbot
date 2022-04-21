@@ -66,14 +66,12 @@ export default (config, http, slack) => {
     return { header, messages };
   };
 
-  const getMonthlyEntriesByUser = async (users, year, month, includeNonBillable = true) => {
+  const sortRawTimeEntriesByUser = (rawTimeEntries, users, includeNonBillable = true) => {
     const orderValue = (a, b) => (a < b ? -1 : 1);
     const compare = (a, b) => (a === b ? 0 : orderValue(a, b));
     const sortedUsers = users.sort(
       (a, b) => compare(a.first_name, b.first_name) || compare(a.last_name, b.last_name),
     );
-
-    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
     const timeEntries = sortedUsers.map(({ id }) => rawTimeEntries
       .filter((entry) => entry.user.id === id)
       .filter((entry) => includeNonBillable || entry.billable)
@@ -140,7 +138,8 @@ export default (config, http, slack) => {
       return `Unable to authorise harvest user ${email}`;
     }
 
-    const allEntries = await getMonthlyEntriesByUser(users, year, month);
+    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
+    const allEntries = sortRawTimeEntriesByUser(rawTimeEntries, users);
     const entriesByType = allEntries.reduce((result, entry) => {
       if (entry.user.roles.includes('Non-billable') && !entry.user.is_contractor) {
         result.nonInvoicable.push(entry);
@@ -189,7 +188,7 @@ export default (config, http, slack) => {
     return `Stats sent to email ${authorisedUser.email}.`;
   };
 
-  const sortEntriesByProjectAndTask = (entries) => entries
+  const sortMonthlyUserEntriesByProjectAndTask = (entries) => entries
     .sort((a, b) => a.date.localeCompare(b.date))
     .reduce((previous, entry) => {
       const result = previous;
@@ -225,13 +224,14 @@ export default (config, http, slack) => {
     }
 
     const selectedUsers = users.filter((user) => lastNames.includes(user.last_name.toLowerCase()));
-    const entries = (await getMonthlyEntriesByUser(selectedUsers, year, month, false))
+    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
+    const entries = sortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false)
       .map((monthlyEntries) => ({
         user: {
           firstName: monthlyEntries.user.first_name,
           lastName: monthlyEntries.user.last_name,
         },
-        entries: sortEntriesByProjectAndTask(monthlyEntries.entries),
+        entries: sortMonthlyUserEntriesByProjectAndTask(monthlyEntries.entries),
       }));
 
     const reportPaths = [];
@@ -271,6 +271,16 @@ export default (config, http, slack) => {
     if (!authorisedUser) {
       return `Unable to authorise harvest user ${email}`;
     }
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month - 1, 1);
+    endDate.setMonth(month + (month > 6 ? 6 : 5));
+    endDate.setDate(0);
+
+    const rawTimeEntries = await tracker.getTimeEntries(startDate, endDate);
+    const entriesByUser = sortRawTimeEntriesByUser(rawTimeEntries, users);
+
+    console.log(JSON.stringify(entriesByUser, null, 2));
 
     return `Working hours report sent to email ${authorisedUser.email}.`;
   };
