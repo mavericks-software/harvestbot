@@ -34,6 +34,12 @@ export default (config, http) => {
     logger.info(`Sent report to ${email}`);
   };
 
+  const generateWorkingHoursReport = async (email, year, month) => {
+    logger.info(`Generating working hours report for ${year}-${month}`);
+    await app.generateWorkingHoursReport(year, month, email);
+    logger.info(`Sent working hours report to ${email}`);
+  };
+
   const sendMonthlyReminders = async (email, year, month) => {
     logger.info(`Sending monthly reminder for ${year}-${month} to ${email}`);
     await app.sendMonthlyReminders(year, month, email, false);
@@ -85,6 +91,10 @@ export default (config, http) => {
       .command('report <email> <year> <month> <lastname...>')
       .description('Send monthly reports to given email address for the listed users.')
       .action(generateReports);
+    program
+      .command('report <email> <year> <month>')
+      .description('Send working hours report to given email address, the range is six months forward from the given month.')
+      .action(generateWorkingHoursReport);
     program
       .command('flextime <email>')
       .description('Calculate flex saldo for given user.')

@@ -72,6 +72,14 @@ export const initFlextime = async (req, res) => {
             });
           return res.json({ text: 'Starting to generate reports. This may take a while.' });
 
+        case 'workinghours':
+          logger.info('Enqueuing report request');
+          await queue(config)
+            .enqueueWorkingHoursRequest({
+              userId: req.body.user_id, responseUrl: req.body.response_url, year, month,
+            });
+          return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
+
         default:
           logger.warn('Received unknown command');
           return res.status(401).send('Unknown command');
@@ -169,6 +177,28 @@ export const calcReports = async (message) => {
     }
 
     const result = await application(config, http).generateReports(year, month, lastNames, email);
+    logger.info('Reports generated');
+
+    return slack.postMessage(userId, result);
+  }
+  return logger.error('Cannot find Slack user id');
+};
+
+export const calcWorkingHours = async (message) => {
+  const config = await getAppConfig();
+  const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
+  const slack = slackApi(config, http, request.responseUrl);
+  const { userId, year, month } = request;
+
+  if (userId) {
+    logger.info(`Calculating working hours report requested by user ${userId}`);
+
+    const email = await slack.getUserEmailForId(userId); // TODO: need slack admin role?
+    if (!email) {
+      return slack.postMessage(userId, 'Cannot find email for Slack user id');
+    }
+
+    const result = await application(config, http).generateWorkingHoursReport(year, month, email);
     logger.info('Reports generated');
 
     return slack.postMessage(userId, result);

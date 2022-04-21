@@ -252,6 +252,29 @@ export default (config, http, slack) => {
     return `Reports sent to email ${authorisedUser.email}.`;
   };
 
+  const generateWorkingHoursReport = async (
+    yearArg,
+    monthArg,
+    email,
+    year = parseInt(yearArg, 10),
+    month = parseInt(monthArg, 10),
+  ) => {
+    const userName = validateEmail(email);
+    if (!userName) {
+      return `Invalid email domain for ${email}`;
+    }
+
+    const users = await tracker.getUsers();
+    const authorisedUser = users.find(
+      (user) => user.is_admin && validateEmail(user.email) === userName,
+    );
+    if (!authorisedUser) {
+      return `Unable to authorise harvest user ${email}`;
+    }
+
+    return `Working hours report sent to email ${authorisedUser.email}.`;
+  };
+
   const sendSlackReminder = async (email, missingDates) => {
     const userInfo = await slack.getUserInfoForEmail(email);
     if (userInfo.ok) {
@@ -315,6 +338,7 @@ export default (config, http, slack) => {
     calcFlextime,
     generateStats,
     generateReports,
+    generateWorkingHoursReport,
     sendMonthlyReminders,
   };
 };
