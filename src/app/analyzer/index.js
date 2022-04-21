@@ -8,9 +8,13 @@ export default ({ taskIds }) => {
   const isPublicHoliday = (taskId) => taskId === taskIds.publicHoliday;
   const isVacation = (taskId) => taskId === taskIds.vacation;
   const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
+  const isParentalLeave = (taskId) => taskId === taskIds.parentalLeave;
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
-  const isSickLeave = (taskId) => taskId === taskIds.sickLeave
-    || taskId === taskIds.sickLeaveChildsSickness;
+  const isExtraPaidLeave = (taskId) => taskId === taskIds.extraPaidLeave;
+  const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
+  const isChildsSickness = (taskId) => taskId === taskIds.sickLeaveChildsSickness;
+  const isProductServiceDevelopment = (taskId) => taskId === taskIds.productServiceDevelopment;
+  const isInternallyInvoicable = (taskId) => taskId === taskIds.internallyInvoicable;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
     || isVacation(taskId)
     || isUnpaidLeave(taskId);
@@ -49,15 +53,15 @@ export default ({ taskIds }) => {
       const entryDate = new Date(entry.date);
       const ignoredTask = isPublicHoliday(entry.taskId) || isFlexLeave(entry.taskId);
       const ignoreFromTotal = ignoredTask;
-      const isCurrenMonthEntry = !ignoreFromTotal && isCurrentMonth(entryDate);
+      const isCurrentMonthEntry = !ignoreFromTotal && isCurrentMonth(entryDate);
 
       return {
         ...result,
         total: ignoredTask ? result.total : result.total + entry.hours,
-        billable: isCurrenMonthEntry && entry.billable
+        billable: isCurrentMonthEntry && entry.billable
           ? result.billable + entry.hours
           : result.billable,
-        nonBillable: isCurrenMonthEntry && !entry.billable
+        nonBillable: isCurrentMonthEntry && !entry.billable
           ? result.nonBillable + entry.hours
           : result.nonBillable,
       };
@@ -83,6 +87,8 @@ export default ({ taskIds }) => {
         working,
         vacation,
         unpaidLeave,
+        parentalLeave,
+        extraPaidLeave,
       },
     } = result;
     if (dates.includes(entry.date)) {
@@ -94,6 +100,8 @@ export default ({ taskIds }) => {
         working: isHoliday(entry.taskId) ? working : working + 1,
         vacation: isVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
+        parentalLeave: isParentalLeave(entry.taskId) ? parentalLeave + 1 : parentalLeave,
+        extraPaidLeave: isExtraPaidLeave(entry.taskId) ? extraPaidLeave + 1 : extraPaidLeave,
       },
     };
   };
@@ -114,7 +122,6 @@ export default ({ taskIds }) => {
     recordedHours = entries.reduce(
       (result, entry) => {
         const dayInfo = getDayInfo(entry);
-
         const projectNotAdded = dayInfo.isBillable
           && !result.projectNames.includes(entry.projectName);
         return {
@@ -131,6 +138,15 @@ export default ({ taskIds }) => {
           sickLeaveHours: isSickLeave(entry.taskId)
             ? result.sickLeaveHours + entry.hours
             : result.sickLeaveHours,
+          childsSicknessHours: isChildsSickness(entry.taskId)
+            ? result.childsSicknessHours + entry.hours
+            : result.childsSicknessHours,
+          productServiceDevelopmentHours: isProductServiceDevelopment(entry.taskId)
+            ? result.productServiceDevelopmentHours + entry.hours
+            : result.productServiceDevelopmentHours,
+          internallyInvoicableHours: isInternallyInvoicable(entry.taskId)
+            ? result.internallyInvoicableHours + entry.hours
+            : result.internallyInvoicableHours,
           projectNames: projectNotAdded
             ? [...result.projectNames, entry.projectName]
             : result.projectNames,
@@ -142,11 +158,16 @@ export default ({ taskIds }) => {
           working: 0,
           vacation: 0,
           unpaidLeave: 0,
+          parentalLeave: 0,
+          extraPaidLeave: 0,
         },
         vacationDates: [],
         hours: 0,
         billableHours: 0,
         sickLeaveHours: 0,
+        childsSicknessHours: 0,
+        productServiceDevelopmentHours: 0,
+        internallyInvoicableHours: 0,
         projectNames: [],
       },
     ),
@@ -160,9 +181,14 @@ export default ({ taskIds }) => {
     projectName: recordedHours.projectNames.join(),
     billablePercentage: (recordedHours.billableHours / recordedHours.hours) * 100,
     flexSaldo: recordedHours.hours - hoursPerCalendar,
+    internallyInvoicableHours: recordedHours.internallyInvoicableHours,
+    productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
     sickLeaveHours: recordedHours.sickLeaveHours,
+    childsSicknessHours: recordedHours.childsSicknessHours,
     vacationDays: recordedHours.daysCount.vacation,
     unpaidLeaveDays: recordedHours.daysCount.unpaidLeave,
+    parentalLeaveDays: recordedHours.daysCount.parentalLeave,
+    extraPaidLeaveDays: recordedHours.daysCount.extraPaidLeave,
     vacationDates: recordedHours.vacationDates.sort().join(','),
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,

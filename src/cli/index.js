@@ -66,7 +66,11 @@ export default (config, http) => {
     console.log(`export TASK_ID_UNPAID_LEAVE=${conf.taskIds.unpaidLeave}`);
     console.log(`export TASK_ID_SICK_LEAVE=${conf.taskIds.sickLeave}`);
     console.log(`export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=${conf.taskIds.sickLeaveChildsSickness}`);
+    console.log(`export TASK_ID_PARENTAL_LEAVE=${conf.taskIds.parentalLeave}`);
     console.log(`export TASK_ID_FLEX_LEAVE=${conf.taskIds.flexLeave}`);
+    console.log(`export TASK_ID_EXTRA_PAID_LEAVE=${conf.taskIds.extraPaidLeave}`);
+    console.log(`export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=${conf.taskIds.productServiceDevelopment}`);
+    console.log(`export TASK_ID_INTERNALLY_INVOICABLE=${conf.taskIds.internallyInvoicable}`);
     /* eslint-enable no-console */
   };
 
