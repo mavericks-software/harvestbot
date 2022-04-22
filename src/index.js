@@ -72,7 +72,7 @@ export const initFlextime = async (req, res) => {
             });
           return res.json({ text: 'Starting to generate billing reports. This may take a while.' });
 
-        case 'workinghours':
+        case 'hours':
           logger.info('Enqueuing working hours report request');
           await queue(config)
             .enqueueWorkingHoursRequest({
