@@ -19,11 +19,10 @@ export default ({ taskIds }) => {
     || isPaidVacation(taskId)
     || isUnpaidLeave(taskId);
   const isHolidayOrFlex = (taskId) => isHoliday(taskId) || isFlexLeave(taskId);
-  const countsTowardsTotalWorkHours = (entry) => entry.billable
-    || isSickLeave(entry.taskId)
-    || isChildsSickness(entry.taskId)
-    || isInternallyInvoicable(entry.taskId)
-    || isProductServiceDevelopment(entry.taskId);
+  const countsTowardsTotalWorkHours = (taskId) => !isPaidVacation(taskId)
+    && !isUnpaidLeave(taskId)
+    && !isExtraPaidLeave(taskId)
+    && !isParentalLeave(taskId);
 
   const getPeriodRangeEnd = (entriesDate, latestFullDate, today = new Date()) => (
     calendar.datesEqual(entriesDate, today)
@@ -205,33 +204,13 @@ export default ({ taskIds }) => {
         nonVacationDays: isPaidVacation(entry.taskId)
           ? result.nonVacationDays - 1
           : result.nonVacationDays,
-        totalWorkHours: countsTowardsTotalWorkHours(entry)
+        totalWorkHours: countsTowardsTotalWorkHours(entry.taskId)
           ? result.totalWorkHours + entry.hours
           : result.totalWorkHours,
-        billable: entry.billable
-          ? result.billableHours + entry.hours
-          : result.billableHours,
-        productServiceDevelopmentHours: isProductServiceDevelopment(entry.taskId)
-          ? result.productServiceDevelopmentHours + entry.hours
-          : result.productServiceDevelopmentHours,
-        internallyInvoicableHours: isInternallyInvoicable(entry.taskId)
-          ? result.internallyInvoicableHours + entry.hours
-          : result.internallyInvoicableHours,
-        sickLeaveHours: isSickLeave(entry.taskId)
-          ? result.sickLeaveHours + entry.hours
-          : result.sickLeaveHours,
-        childsSicknessHours: isChildsSickness(entry.taskId)
-          ? result.childsSicknessHours + entry.hours
-          : result.childsSicknessHours,
       }),
       {
         nonVacationDays: numOfWeekdays,
         totalWorkHours: 0,
-        billableHours: 0,
-        productServiceDevelopmentHours: 0,
-        internallyInvoicableHours: 0,
-        sickLeaveHours: 0,
-        childsSicknessHours: 0,
       },
     );
     const totalWorkWeeks = recordedHours.nonVacationDays / 5;
@@ -243,11 +222,6 @@ export default ({ taskIds }) => {
       totalWorkWeeks,
       maxWorkHours: totalWorkWeeks * 48,
       totalWorkHours: recordedHours.totalWorkHours,
-      billableHours: recordedHours.billableHours,
-      internallyInvoicableHours: recordedHours.internallyInvoicableHours,
-      productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
-      sickLeaveHours: recordedHours.sickLeaveHours,
-      childsSicknessHours: recordedHours.childsSicknessHours,
     };
   };
 

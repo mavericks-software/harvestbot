@@ -168,7 +168,7 @@ export default (config, http, slack) => {
     const fileName = `${year}-${month}-hours-${new Date().getTime()}.xlsx`;
     const filePath = `${tmpdir()}/${fileName}`;
     logger.info(`Writing stats to ${filePath}`);
-    excel().writeStatsWorkbook(
+    excel().writeWorkbook(
       filePath,
       [{
         rows: monthlyHoursRows,
@@ -304,13 +304,21 @@ export default (config, http, slack) => {
     const fileName = `${title}.xlsx`;
     const filePath = `${tmpdir()}/${fileName}`;
 
-    excel().writeStatsWorkbook(
+    excel().writeWorkbook(
       filePath,
       [{
         rows: reportData,
         title,
         headers: config.workingHoursReportHeaders,
-        columns: [{ index: 0, width: 20 }],
+        columns: [
+          { index: 0, width: 20 },
+          { index: 1, width: 5 },
+          { index: 2, width: 15 },
+          { index: 3, width: 15 },
+          { index: 4, width: 15 },
+          { index: 5, width: 15 },
+          { index: 6, width: 15 },
+        ],
       }],
     );
 
