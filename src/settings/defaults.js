@@ -29,3 +29,13 @@ export const DEFAULT_BILLABLE_STATS_COLUMN_HEADERS = [
   'EUR',
   'Avg hour rate',
 ];
+
+export const DEFAULT_WORKING_HOURS_REPORT_COLUMN_HEADERS = [
+  'Name',
+  'Currently active',
+  'Non-vacation days',
+  'Vacation days',
+  'Working weeks',
+  'Max working hours',
+  'Total working hours',
+];

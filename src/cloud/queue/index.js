@@ -5,6 +5,7 @@ export default (config) => {
     flextime: 'flextime',
     stats: 'stats',
     reports: 'reports',
+    workinghours: 'workinghours',
   };
   const pubsubClient = new PubSub({
     projectId: config.projectId,
@@ -16,8 +17,16 @@ export default (config) => {
   const enqueueStatsRequest = (data) => pubsubClient
     .topic(topics.stats).publish(Buffer.from(JSON.stringify(data)));
 
-  const enqueueReportsRequest = (data) => pubsubClient
+  const enqueueBillingReportsRequest = (data) => pubsubClient
     .topic(topics.reports).publish(Buffer.from(JSON.stringify(data)));
 
-  return { enqueueFlexTimeRequest, enqueueStatsRequest, enqueueReportsRequest };
+  const enqueueWorkingHoursRequest = (data) => pubsubClient
+    .topic(topics.workinghours).publish(Buffer.from(JSON.stringify(data)));
+
+  return {
+    enqueueFlexTimeRequest,
+    enqueueStatsRequest,
+    enqueueBillingReportsRequest,
+    enqueueWorkingHoursRequest,
+  };
 };

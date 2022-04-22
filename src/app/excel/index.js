@@ -4,7 +4,7 @@ export default () => {
   const CHAR_CODE_A = 65;
 
   // TODO: error handling
-  const writeStatsWorkbook = (filePath, sheets) => {
+  const writeWorkbook = (filePath, sheets) => {
     const book = xlsx.utils.book_new();
     sheets.map((
       {
@@ -33,6 +33,6 @@ export default () => {
   };
 
   return {
-    writeStatsWorkbook,
+    writeWorkbook,
   };
 };

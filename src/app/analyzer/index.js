@@ -6,7 +6,7 @@ export default ({ taskIds }) => {
   const sortByDate = (a, b) => new Date(a.date) - new Date(b.date);
 
   const isPublicHoliday = (taskId) => taskId === taskIds.publicHoliday;
-  const isVacation = (taskId) => taskId === taskIds.vacation;
+  const isPaidVacation = (taskId) => taskId === taskIds.vacation;
   const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
   const isParentalLeave = (taskId) => taskId === taskIds.parentalLeave;
   const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
@@ -16,9 +16,13 @@ export default ({ taskIds }) => {
   const isProductServiceDevelopment = (taskId) => taskId === taskIds.productServiceDevelopment;
   const isInternallyInvoicable = (taskId) => taskId === taskIds.internallyInvoicable;
   const isHoliday = (taskId) => isPublicHoliday(taskId)
-    || isVacation(taskId)
+    || isPaidVacation(taskId)
     || isUnpaidLeave(taskId);
   const isHolidayOrFlex = (taskId) => isHoliday(taskId) || isFlexLeave(taskId);
+  const countsTowardsTotalWorkHours = (taskId) => !isPaidVacation(taskId)
+    && !isUnpaidLeave(taskId)
+    && !isExtraPaidLeave(taskId)
+    && !isParentalLeave(taskId);
 
   const getPeriodRangeEnd = (entriesDate, latestFullDate, today = new Date()) => (
     calendar.datesEqual(entriesDate, today)
@@ -98,7 +102,7 @@ export default ({ taskIds }) => {
       dates: [...dates, entry.date],
       daysCount: {
         working: isHoliday(entry.taskId) ? working : working + 1,
-        vacation: isVacation(entry.taskId) ? vacation + 1 : vacation,
+        vacation: isPaidVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
         parentalLeave: isParentalLeave(entry.taskId) ? parentalLeave + 1 : parentalLeave,
         extraPaidLeave: isExtraPaidLeave(entry.taskId) ? extraPaidLeave + 1 : extraPaidLeave,
@@ -126,7 +130,7 @@ export default ({ taskIds }) => {
           && !result.projectNames.includes(entry.projectName);
         return {
           ...(dayInfo.isCalendarWorkingDay ? addDayStats(entry, result) : result),
-          vacationDates: isVacation(entry.taskId)
+          vacationDates: isPaidVacation(entry.taskId)
             ? result.vacationDates.concat([moment(entry.date, 'YYYY-MM-DD').date()])
             : result.vacationDates,
           hours: dayInfo.isWorkingOrSickDay
@@ -193,6 +197,33 @@ export default ({ taskIds }) => {
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,
   });
+
+  const getWorkingHoursReportData = ({ user, entries }, numOfWeekdays) => {
+    const recordedHours = entries.reduce(
+      (result, entry) => ({
+        nonVacationDays: isPaidVacation(entry.taskId)
+          ? result.nonVacationDays - 1
+          : result.nonVacationDays,
+        totalWorkHours: countsTowardsTotalWorkHours(entry.taskId)
+          ? result.totalWorkHours + entry.hours
+          : result.totalWorkHours,
+      }),
+      {
+        nonVacationDays: numOfWeekdays,
+        totalWorkHours: 0,
+      },
+    );
+    const totalWorkWeeks = recordedHours.nonVacationDays / 5;
+    return {
+      name: `${user.first_name} ${user.last_name}`,
+      active: user.is_active ? 'yes' : 'no',
+      nonVacationDays: recordedHours.nonVacationDays,
+      vacationDays: numOfWeekdays - recordedHours.nonVacationDays,
+      totalWorkWeeks,
+      maxWorkHours: totalWorkWeeks * 48,
+      totalWorkHours: recordedHours.totalWorkHours,
+    };
+  };
 
   const flattenBillableUserEntries = (entries) => entries.reduce(
     (result, { user, entries: userEntries }) => ([
@@ -357,5 +388,6 @@ export default ({ taskIds }) => {
     calculateWorkedHours,
     getHoursStats,
     getBillableStats,
+    getWorkingHoursReportData,
   };
 };

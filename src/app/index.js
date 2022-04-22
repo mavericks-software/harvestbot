@@ -66,14 +66,12 @@ export default (config, http, slack) => {
     return { header, messages };
   };
 
-  const getMonthlyEntriesByUser = async (users, year, month, includeNonBillable = true) => {
+  const sortRawTimeEntriesByUser = (rawTimeEntries, users, includeNonBillable = true) => {
     const orderValue = (a, b) => (a < b ? -1 : 1);
     const compare = (a, b) => (a === b ? 0 : orderValue(a, b));
     const sortedUsers = users.sort(
       (a, b) => compare(a.first_name, b.first_name) || compare(a.last_name, b.last_name),
     );
-
-    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
     const timeEntries = sortedUsers.map(({ id }) => rawTimeEntries
       .filter((entry) => entry.user.id === id)
       .filter((entry) => includeNonBillable || entry.billable)
@@ -140,7 +138,8 @@ export default (config, http, slack) => {
       return `Unable to authorise harvest user ${email}`;
     }
 
-    const allEntries = await getMonthlyEntriesByUser(users, year, month);
+    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
+    const allEntries = sortRawTimeEntriesByUser(rawTimeEntries, users);
     const entriesByType = allEntries.reduce((result, entry) => {
       if (entry.user.roles.includes('Non-billable') && !entry.user.is_contractor) {
         result.nonInvoicable.push(entry);
@@ -169,7 +168,7 @@ export default (config, http, slack) => {
     const fileName = `${year}-${month}-hours-${new Date().getTime()}.xlsx`;
     const filePath = `${tmpdir()}/${fileName}`;
     logger.info(`Writing stats to ${filePath}`);
-    excel().writeStatsWorkbook(
+    excel().writeWorkbook(
       filePath,
       [{
         rows: monthlyHoursRows,
@@ -189,7 +188,7 @@ export default (config, http, slack) => {
     return `Stats sent to email ${authorisedUser.email}.`;
   };
 
-  const sortEntriesByProjectAndTask = (entries) => entries
+  const sortMonthlyUserEntriesByProjectAndTask = (entries) => entries
     .sort((a, b) => a.date.localeCompare(b.date))
     .reduce((previous, entry) => {
       const result = previous;
@@ -203,7 +202,7 @@ export default (config, http, slack) => {
       return result;
     }, {});
 
-  const generateReports = async (
+  const generateBillingReports = async (
     yearArg,
     monthArg,
     lastNames,
@@ -225,13 +224,14 @@ export default (config, http, slack) => {
     }
 
     const selectedUsers = users.filter((user) => lastNames.includes(user.last_name.toLowerCase()));
-    const entries = (await getMonthlyEntriesByUser(selectedUsers, year, month, false))
+    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
+    const entries = sortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false)
       .map((monthlyEntries) => ({
         user: {
           firstName: monthlyEntries.user.first_name,
           lastName: monthlyEntries.user.last_name,
         },
-        entries: sortEntriesByProjectAndTask(monthlyEntries.entries),
+        entries: sortMonthlyUserEntriesByProjectAndTask(monthlyEntries.entries),
       }));
 
     const reportPaths = [];
@@ -241,7 +241,7 @@ export default (config, http, slack) => {
         const escapedProjectName = projectEntries.projectName.replace(/(\W+)/gi, '_');
         const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.pdf`;
         const filePath = `${tmpdir()}/${fileName}`;
-        logger.info(`Writing report to ${filePath}`);
+        logger.info(`Writing billing report to ${filePath}`);
         writeBillingReport(filePath, userEntries.user, projectEntries);
         reportPaths.push(filePath);
       });
@@ -249,7 +249,82 @@ export default (config, http, slack) => {
 
     await emailer(config).sendEmail(authorisedUser.email, 'Monthly harvest billing reports', `${year}-${month}`, reportPaths);
     reportPaths.forEach((path) => unlinkSync(path));
-    return `Reports sent to email ${authorisedUser.email}.`;
+    return `Billing reports sent to email ${authorisedUser.email}.`;
+  };
+
+  const countWeekdays = (startDate, endDate) => {
+    const d = new Date(startDate);
+    let count = 0;
+    while (d <= endDate) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        count += 1;
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  };
+
+  const generateWorkingHoursReport = async (
+    yearArg,
+    monthArg,
+    rangeArg,
+    email,
+  ) => {
+    const range = rangeArg ? parseInt(rangeArg, 10) : 6;
+    if (range < 1 || range > 12) {
+      return 'Invalid range';
+    }
+
+    const userName = validateEmail(email);
+    if (!userName) {
+      return `Invalid email domain for ${email}`;
+    }
+
+    const users = await tracker.getUsers();
+    const authorisedUser = users.find(
+      (user) => user.is_admin && validateEmail(user.email) === userName,
+    );
+    if (!authorisedUser) {
+      return `Unable to authorise harvest user ${email}`;
+    }
+
+    const year = parseInt(yearArg, 10);
+    const month = parseInt(monthArg, 10);
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month - 1, 1);
+    endDate.setMonth(month + range - 1);
+    endDate.setDate(0);
+
+    const numOfWeekdays = countWeekdays(startDate, endDate);
+    const rawTimeEntries = await tracker.getTimeEntries(startDate, endDate);
+    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, users)
+      .map((userData) => analyzer.getWorkingHoursReportData(userData, numOfWeekdays));
+
+    const title = `working-hours-${startDate.getFullYear()}-${startDate.getMonth() + 1}-${endDate.getFullYear()}-${endDate.getMonth() + 1}`;
+    const fileName = `${title}.xlsx`;
+    const filePath = `${tmpdir()}/${fileName}`;
+
+    excel().writeWorkbook(
+      filePath,
+      [{
+        rows: reportData,
+        title,
+        headers: config.workingHoursReportHeaders,
+        columns: [
+          { index: 0, width: 20 },
+          { index: 1, width: 5 },
+          { index: 2, width: 15 },
+          { index: 3, width: 15 },
+          { index: 4, width: 15 },
+          { index: 5, width: 15 },
+          { index: 6, width: 15 },
+        ],
+      }],
+    );
+
+    await emailer(config).sendEmail(authorisedUser.email, 'Working hours report', title, [filePath]);
+    unlinkSync(filePath);
+    return `Working hours report sent to email ${authorisedUser.email}.`;
   };
 
   const sendSlackReminder = async (email, missingDates) => {
@@ -314,7 +389,8 @@ export default (config, http, slack) => {
   return {
     calcFlextime,
     generateStats,
-    generateReports,
+    generateBillingReports,
+    generateWorkingHoursReport,
     sendMonthlyReminders,
   };
 };

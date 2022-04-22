@@ -2,6 +2,7 @@ import log from '../log';
 import {
   DEFAULT_HOURS_STATS_COLUMN_HEADERS,
   DEFAULT_BILLABLE_STATS_COLUMN_HEADERS,
+  DEFAULT_WORKING_HOURS_REPORT_COLUMN_HEADERS,
 } from './defaults';
 import decrypter from '../cloud/key-ring';
 
@@ -33,6 +34,9 @@ export default () => {
       billableStatsColumnHeaders: secretConfig.billableStatsColumnHeaders
         ? secretConfig.billableStatsColumnHeaders.split(',')
         : DEFAULT_BILLABLE_STATS_COLUMN_HEADERS,
+      workingHoursReportHeaders: secretConfig.workingHoursReportHeaders
+        ? secretConfig.workingHoursReportHeaders.split(',')
+        : DEFAULT_WORKING_HOURS_REPORT_COLUMN_HEADERS,
       taskIds: {
         publicHoliday: parseInt(secretConfig.taskIds.publicHoliday, 10),
         vacation: parseInt(secretConfig.taskIds.vacation, 10),

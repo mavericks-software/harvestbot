@@ -7,6 +7,7 @@
   "notifyChannelId": "SLACK_NOTIFY_CHANNEL_ID",
   "hoursStatsColumnHeaders": "HOURS_STATS_COLUMN_HEADERS",
   "billableStatsColumnHeaders": "BILLABLE_STATS_COLUMN_HEADERS",
+  "workingHoursReportHeaders": "WORKING_HOURS_REPORT_COLUMN_HEADERS",
   "sendGridApiKey": "SENDGRID_API_KEY",
   "taskIds": {
     "publicHoliday": "TASK_ID_PUBLIC_HOLIDAY",
