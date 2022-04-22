@@ -280,7 +280,8 @@ export default (config, http, slack) => {
       return `Invalid email domain for ${email}`;
     }
 
-    const users = await tracker.getUsers();
+    const users = await tracker.getUsers()
+      .filter((user) => user.is_active && !user.is_contractor);
     const authorisedUser = users.find(
       (user) => user.is_admin && validateEmail(user.email) === userName,
     );
