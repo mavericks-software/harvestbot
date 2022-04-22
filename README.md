@@ -56,7 +56,7 @@ The values in the report are calculated as follows:
 * added to ```config/custom-environment-variables.json```
 * skipped in ```src/analyzer/index.js``` (```countsTowardsTotalWorkHours```)
 * updated to this README (the list above and the env variable instructions below)
-* added to ```src/cli/index.js``` (for the decrypt command to show them)
+* added to ```src/cli/index.js``` (```decryptConfiguration```)
 ## Development
 
 Harvestbot functionality can be triggered from local machine using CLI-interface. Install relevant tools and setup environment variables first.

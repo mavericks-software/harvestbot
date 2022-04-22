@@ -280,8 +280,7 @@ export default (config, http, slack) => {
       return `Invalid email domain for ${email}`;
     }
 
-    const users = await tracker.getUsers()
-      .filter((user) => user.is_active && !user.is_contractor);
+    const users = await tracker.getUsers();
     const authorisedUser = users.find(
       (user) => user.is_admin && validateEmail(user.email) === userName,
     );
@@ -298,7 +297,8 @@ export default (config, http, slack) => {
 
     const numOfWeekdays = countWeekdays(startDate, endDate);
     const rawTimeEntries = await tracker.getTimeEntries(startDate, endDate);
-    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, users)
+    const selectedUsers = users.filter((user) => user.is_active && !user.is_contractor);
+    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, selectedUsers)
       .map((userData) => analyzer.getWorkingHoursReportData(userData, numOfWeekdays));
 
     const title = `working-hours-${startDate.getFullYear()}-${startDate.getMonth() + 1}-${endDate.getFullYear()}-${endDate.getMonth() + 1}`;
