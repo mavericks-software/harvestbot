@@ -216,7 +216,6 @@ export default ({ taskIds }) => {
     const totalWorkWeeks = recordedHours.nonVacationDays / 5;
     return {
       name: `${user.first_name} ${user.last_name}`,
-      active: user.is_active ? 'yes' : 'no',
       nonVacationDays: recordedHours.nonVacationDays,
       vacationDays: numOfWeekdays - recordedHours.nonVacationDays,
       totalWorkWeeks,

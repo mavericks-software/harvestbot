@@ -297,7 +297,8 @@ export default (config, http, slack) => {
 
     const numOfWeekdays = countWeekdays(startDate, endDate);
     const rawTimeEntries = await tracker.getTimeEntries(startDate, endDate);
-    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, users)
+    const selectedUsers = users.filter((user) => user.is_active && !user.is_contractor);
+    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, selectedUsers)
       .map((userData) => analyzer.getWorkingHoursReportData(userData, numOfWeekdays));
 
     const title = `working-hours-${startDate.getFullYear()}-${startDate.getMonth() + 1}-${endDate.getFullYear()}-${endDate.getMonth() + 1}`;
@@ -312,12 +313,11 @@ export default (config, http, slack) => {
         headers: config.workingHoursReportHeaders,
         columns: [
           { index: 0, width: 20 },
-          { index: 1, width: 5 },
+          { index: 1, width: 15 },
           { index: 2, width: 15 },
           { index: 3, width: 15 },
           { index: 4, width: 15 },
           { index: 5, width: 15 },
-          { index: 6, width: 15 },
         ],
       }],
     );

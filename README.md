@@ -14,36 +14,49 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 ## Usage
 
-**Show flextime balance for current Slack user**
+### Flextime balance for the current Slack user
 
 ```/flextime```
 
 ![Flextime example](./docs/flextime-slack.png "Flextime example")
 
-**Generate monthly statistics excel and send it via email to current Slack user**
+### Monthly statistics excel
 
 ```/flextime stats 2019 3```
 
-![Stats example](./docs/stats-slack.png "Stats example")
-
 Statistics sheet displays work time statistics for each company employee. The second tab gives detailed information for billable hours that can be used as the basis for billing.
 
-**Generate billing report PDFs and send them via email to the current Slack user**
+### Billing report PDFs
 
-The report command identifies users by their last names and generates a monthly PDF report for every project for which they have billable entries in the given month. The reports will then be sent via email to the user that entered the command.
+The ```report``` command identifies users by their last names and generates a monthly PDF report for every project for which they have billable entries in the given month. The reports will then be sent via email to the user that entered the command.
 
 ```/flextime report 2019 3 virtanen meikäläinen```
 
-![Monthly report example](./docs/report-slack.png "Report example")
-
-**Generate working hours report excel and send it via email to current Slack user**
+### Working hours report
 
 ```/flextime hours 2019 1 6```
 
-![Stats example](./docs/stats-slack.png "Stats example")
+The ```hours``` command creates a report containing the maximum and actual working hours for every active non-contractor employee during the given time range.
 
-The hours command creates a report containing maximum and total working hours for every employee in Harvest for the given time range. The first two parameters are the start year and month for the time range. The last parameter defines how long the time range is in months, it is optional and 6 months by default. The range is inclusive.
+The first two parameters are the starting year and month for the time range. The last parameter defines the length of the time range in months, it is optional and set to 6 months by default. For example, the parameters ```2022 3 4``` will result in a range from 2022-03-01 to 2022-06-31.
 
+The values in the report are calculated as follows:
+* ***Non-vacation days***: all weekdays mo-fr in the time range (public holidays are included), minus paid vacation days
+* ***Vacation days***: paid vacation days
+* ***Working weeks***: non-vacation days / 5
+* ***Max work hours***: working weeks * 48
+* ***Total working hours***: all hours entered in Harvest, except
+   * Paid vacation
+   * Unpaid vacation
+   * Extra paid leave
+   * Parental leave
+
+***Please note*** that if new tasks that should ***not*** be included in the total working hours are added to Harvest, they must be
+* added to the encrypted app configuration as environment variables (```TASK_ID_...```, intructions for this can be found later in the README)
+* added to ```config/custom-environment-variables.json```
+* skipped in ```src/analyzer/index.js``` (```countsTowardsTotalWorkHours```)
+* updated to this README (the list above and the env variable instructions below)
+* added to ```src/cli/index.js``` (```decryptConfiguration```)
 ## Development
 
 Harvestbot functionality can be triggered from local machine using CLI-interface. Install relevant tools and setup environment variables first.

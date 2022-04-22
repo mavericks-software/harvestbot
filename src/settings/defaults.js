@@ -32,7 +32,6 @@ export const DEFAULT_BILLABLE_STATS_COLUMN_HEADERS = [
 
 export const DEFAULT_WORKING_HOURS_REPORT_COLUMN_HEADERS = [
   'Name',
-  'Currently active',
   'Non-vacation days',
   'Vacation days',
   'Working weeks',
