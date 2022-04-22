@@ -267,10 +267,14 @@ export default (config, http, slack) => {
   const generateWorkingHoursReport = async (
     yearArg,
     monthArg,
+    rangeArg,
     email,
-    year = parseInt(yearArg, 10),
-    month = parseInt(monthArg, 10),
   ) => {
+    const range = rangeArg ? parseInt(rangeArg, 10) : 6;
+    if (range < 1 || range > 12) {
+      return 'Invalid range';
+    }
+
     const userName = validateEmail(email);
     if (!userName) {
       return `Invalid email domain for ${email}`;
@@ -284,9 +288,11 @@ export default (config, http, slack) => {
       return `Unable to authorise harvest user ${email}`;
     }
 
+    const year = parseInt(yearArg, 10);
+    const month = parseInt(monthArg, 10);
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month - 1, 1);
-    endDate.setMonth(month + 5);
+    endDate.setMonth(month + range - 1);
     endDate.setDate(0);
 
     const numOfWeekdays = countWeekdays(startDate, endDate);

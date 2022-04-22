@@ -76,7 +76,11 @@ export const initFlextime = async (req, res) => {
           logger.info('Enqueuing working hours report request');
           await queue(config)
             .enqueueWorkingHoursRequest({
-              userId: req.body.user_id, responseUrl: req.body.response_url, year, month,
+              userId: req.body.user_id,
+              responseUrl: req.body.response_url,
+              year,
+              month,
+              range: cmdParts.length > 3 ? cmdParts[3] : 6,
             });
           return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
 
@@ -189,7 +193,12 @@ export const calcWorkingHours = async (message) => {
   const config = await getAppConfig();
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
-  const { userId, year, month } = request;
+  const {
+    userId,
+    year,
+    month,
+    range,
+  } = request;
 
   if (userId) {
     logger.info(`Calculating working hours report requested by user ${userId}`);
@@ -199,7 +208,8 @@ export const calcWorkingHours = async (message) => {
       return slack.postMessage(userId, 'Cannot find email for Slack user id');
     }
 
-    const result = await application(config, http).generateWorkingHoursReport(year, month, email);
+    const result = await application(config, http)
+      .generateWorkingHoursReport(year, month, range, email);
     logger.info('Reports generated');
 
     return slack.postMessage(userId, result);

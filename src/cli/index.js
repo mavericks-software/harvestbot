@@ -34,9 +34,9 @@ export default (config, http) => {
     logger.info(`Sent billing reports to ${email}`);
   };
 
-  const generateWorkingHoursReport = async (email, year, month) => {
-    logger.info(`Generating working hours report for ${year}-${month}`);
-    await app.generateWorkingHoursReport(year, month, email);
+  const generateWorkingHoursReport = async (email, year, month, range) => {
+    logger.info(`Generating working hours report, range ${range} months from ${year}-${month}`);
+    await app.generateWorkingHoursReport(year, month, range, email);
     logger.info(`Sent working hours report to ${email}`);
   };
 
@@ -92,8 +92,8 @@ export default (config, http) => {
       .description('Send monthly reports to given email address for the listed users.')
       .action(generateBillingReports);
     program
-      .command('hours <email> <year> <month>')
-      .description('Send working hours report to given email address, the range is six months forward from the given month.')
+      .command('hours <email> <year> <month> <range>')
+      .description('Send working hours report to given email address.')
       .action(generateWorkingHoursReport);
     program
       .command('flextime <email>')
