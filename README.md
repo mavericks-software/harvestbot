@@ -20,7 +20,6 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 ![Flextime example](./docs/flextime-slack.png "Flextime example")
 
-
 **Generate monthly statistics excel and send it via email to current Slack user**
 
 ```/flextime stats 2019 3```
@@ -36,6 +35,14 @@ The report command identifies users by their last names and generates a monthly 
 ```/flextime report 2019 3 virtanen meikäläinen```
 
 ![Monthly report example](./docs/report-slack.png "Report example")
+
+**Generate working hours report excel and send it via email to current Slack user**
+
+```/flextime hours 2019 1 6```
+
+![Stats example](./docs/stats-slack.png "Stats example")
+
+The hours command creates a report containing maximum and total working hours for every employee in Harvest for the given time range. The first two parameters are the start year and month for the time range. The last parameter defines how long the time range is in months, it is optional and 6 months by default. The range is inclusive.
 
 ## Development
 
@@ -243,6 +250,7 @@ gcloud functions deploy initFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJE
 gcloud functions deploy calcFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic flextime
 gcloud functions deploy calcStats --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic stats
 gcloud functions deploy calcBillingReports --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic reports
+gcloud functions deploy calcWorkingHours --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-topic workinghours
 gcloud functions deploy sendReminders --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --timeout 540 --trigger-http
 gcloud functions deploy notifyUsers --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs12 --trigger-http
 ```
