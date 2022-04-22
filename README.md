@@ -24,8 +24,6 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 ```/flextime stats 2019 3```
 
-![Stats example](./docs/stats-slack.png "Stats example")
-
 Statistics sheet displays work time statistics for each company employee. The second tab gives detailed information for billable hours that can be used as the basis for billing.
 
 **Generate billing report PDFs and send them via email to the current Slack user**
@@ -34,13 +32,9 @@ The report command identifies users by their last names and generates a monthly 
 
 ```/flextime report 2019 3 virtanen meikäläinen```
 
-![Monthly report example](./docs/report-slack.png "Report example")
-
 **Generate working hours report excel and send it via email to current Slack user**
 
 ```/flextime hours 2019 1 6```
-
-![Stats example](./docs/stats-slack.png "Stats example")
 
 The hours command creates a report containing maximum and total working hours for every employee in Harvest for the given time range. The first two parameters are the start year and month for the time range. The last parameter defines how long the time range is in months, it is optional and 6 months by default. The range is inclusive.
 
