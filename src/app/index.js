@@ -252,6 +252,18 @@ export default (config, http, slack) => {
     return `Billing reports sent to email ${authorisedUser.email}.`;
   };
 
+  const countWeekdays = (startDate, endDate) => {
+    const d = new Date(startDate);
+    let count = 0;
+    while (d <= endDate) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        count += 1;
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  };
+
   const generateWorkingHoursReport = async (
     yearArg,
     monthArg,
@@ -274,14 +286,30 @@ export default (config, http, slack) => {
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month - 1, 1);
-    endDate.setMonth(month + (month > 6 ? 6 : 5));
+    endDate.setMonth(month + 5);
     endDate.setDate(0);
 
+    const numOfWeekdays = countWeekdays(startDate, endDate);
     const rawTimeEntries = await tracker.getTimeEntries(startDate, endDate);
-    const entriesByUser = sortRawTimeEntriesByUser(rawTimeEntries, users);
+    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, users)
+      .map((userData) => analyzer.getWorkingHoursReportData(userData, numOfWeekdays));
 
-    console.log(JSON.stringify(entriesByUser, null, 2));
+    const title = `working-hours-${startDate.getFullYear()}-${startDate.getMonth() + 1}-${endDate.getFullYear()}-${endDate.getMonth() + 1}`;
+    const fileName = `${title}.xlsx`;
+    const filePath = `${tmpdir()}/${fileName}`;
 
+    excel().writeStatsWorkbook(
+      filePath,
+      [{
+        rows: reportData,
+        title,
+        headers: config.workingHoursReportHeaders,
+        columns: [{ index: 0, width: 20 }],
+      }],
+    );
+
+    await emailer(config).sendEmail(authorisedUser.email, 'Working hours report', title, [filePath]);
+    unlinkSync(filePath);
     return `Working hours report sent to email ${authorisedUser.email}.`;
   };
 
