@@ -57,6 +57,11 @@ The values in the report are calculated as follows:
 * skipped in ```src/analyzer/index.js``` (```countsTowardsTotalWorkHours```)
 * updated to this README (the list above and the env variable instructions below)
 * added to ```src/cli/index.js``` (```decryptConfiguration```)
+
+### Monthly reminders
+
+Reminders will be sent automatically every last day of the month to users that have days with no entries in Harvest (excluding contractors). They will be sent at 13:00 and 18:00. ***TODO:*** Send reminders on the last ***working*** day of the month.
+
 ## Development
 
 Harvestbot functionality can be triggered from local machine using CLI-interface. Install relevant tools and setup environment variables first.
