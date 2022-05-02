@@ -362,7 +362,9 @@ export default (config, http, slack) => {
       const year = yearArg ? parseInt(yearArg, 10) : calendar.CURRENT_YEAR;
       const month = monthArg ? parseInt(monthArg, 10) : calendar.CURRENT_MONTH + 1;
       const users = (await tracker.getUsers())
-        .filter((user) => user.is_active && (!emailArg || emailArg === user.email));
+        .filter((user) => user.is_active
+          && !user.is_contractor
+          && (!emailArg || emailArg === user.email));
       const entries = await tracker.getMonthlyTimeEntries(year, month);
       const workingDays = calendar.getWorkingDaysForMonth(year, month);
 
