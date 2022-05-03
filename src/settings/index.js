@@ -41,6 +41,7 @@ export default () => {
         publicHoliday: parseInt(secretConfig.taskIds.publicHoliday, 10),
         vacation: parseInt(secretConfig.taskIds.vacation, 10),
         unpaidLeave: parseInt(secretConfig.taskIds.unpaidLeave, 10),
+        parentalLeave: parseInt(secretConfig.taskIds.parentalLeave, 10),
         sickLeave: parseInt(secretConfig.taskIds.sickLeave, 10),
         sickLeaveChildsSickness: parseInt(secretConfig.taskIds.sickLeaveChildsSickness, 10),
         flexLeave: parseInt(secretConfig.taskIds.flexLeave, 10),
