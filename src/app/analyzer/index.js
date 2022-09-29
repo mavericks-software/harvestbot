@@ -120,6 +120,29 @@ export default ({ taskIds }) => {
     isBillable: isWorkingOrSickDay && entry.billable,
   });
 
+  /* eslint-disable no-param-reassign */
+  const groupConsecutiveDates = (dates) => dates.reduce((resultArray, entry) => {
+    if (resultArray.length === 0) {
+      return [{
+        startDate: entry,
+        endDate: entry,
+      }];
+    }
+    if (resultArray[resultArray.length - 1].endDate + 1 === entry) {
+      resultArray[resultArray.length - 1].endDate = entry;
+      return resultArray;
+    }
+    return [...resultArray,
+      {
+        startDate: entry,
+        endDate: entry,
+      }];
+  }, []).map((range) => (range.startDate !== range.endDate
+    ? `${range.startDate}-${range.endDate}`
+    : range.startDate));
+
+  const formatVacationDates = (vacationDates) => groupConsecutiveDates(vacationDates.sort((a, b) => a - b)).join(',');
+
   const getHoursStats = (
     { user, entries },
     fullCalendarDays,
@@ -197,34 +220,6 @@ export default ({ taskIds }) => {
     markedDays: recordedHours.dates.length,
     missingDays: recordedHours.dates.length - fullCalendarDays,
   });
-
-  const formatVacationDates = (vacationDates) => {
-    return groupConsecutiveDates(vacationDates.sort((a,b) => a - b)).join(',');
-  }
-
-  const groupConsecutiveDates = (dates) => {
-    return dates.reduce((resultArray, entry) => {
-      if (resultArray.length === 0) {
-        return [{
-          startDate: entry,
-          endDate: entry,
-        }];
-      } else {
-        if (resultArray[resultArray.length -1].endDate + 1 === entry) {
-          resultArray[resultArray.length -1].endDate = entry;
-          return resultArray;
-        } else {
-          return [...resultArray,
-            {
-              startDate: entry,
-              endDate: entry,
-            }];
-        }
-      }
-    }, []).map(range => range.startDate !== range.endDate
-        ? range.startDate + '-' + range.endDate
-        : range.startDate);
-  }
 
   const getWorkingHoursReportData = ({ user, entries }, numOfWeekdays) => {
     const recordedHours = entries.reduce(
