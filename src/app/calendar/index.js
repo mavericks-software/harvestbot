@@ -60,7 +60,14 @@ export default () => {
     return days;
   };
 
+  const isLastWorkingDayOfMonth = (date, year, month) => {
+    const workingDays = getWorkingDaysTotalForMonth(year, month);
+    const lastWorkingDay = workingDays[workingDays.length - 1];
+    return date.toDateString() === lastWorkingDay.toDateString();
+  };
+
   return {
+    CURRENT_DATE,
     CURRENT_MONTH,
     CURRENT_YEAR,
     IS_LAST_DAY_OF_MONTH,
@@ -71,5 +78,6 @@ export default () => {
     getTotalWorkHoursSinceDate,
     getWorkingDaysTotalForMonth,
     getWorkingDaysForMonth,
+    isLastWorkingDayOfMonth,
   };
 };

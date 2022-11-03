@@ -356,18 +356,19 @@ export default (config, http, slack) => {
     yearArg,
     monthArg,
     emailArg,
-    checkIfLastDayOfMonth = true,
+    checkIfLastWorkingDay = true,
   ) => {
-    if (!checkIfLastDayOfMonth || calendar.IS_LAST_DAY_OF_MONTH) {
-      const year = yearArg ? parseInt(yearArg, 10) : calendar.CURRENT_YEAR;
-      const month = monthArg ? parseInt(monthArg, 10) : calendar.CURRENT_MONTH + 1;
+    const year = yearArg ? parseInt(yearArg, 10) : calendar.CURRENT_YEAR;
+    const month = monthArg ? parseInt(monthArg, 10) : calendar.CURRENT_MONTH + 1;
+    const workingDays = calendar.getWorkingDaysForMonth(year, month);
+    const lastWorkingDay = workingDays[workingDays.length - 1];
+    const isLastWorkingDay = calendar.CURRENT_DATE.toDateString() === lastWorkingDay.toDateString();
+    if (!checkIfLastWorkingDay || isLastWorkingDay) {
       const users = (await tracker.getUsers())
         .filter((user) => user.is_active
           && !user.is_contractor
           && (!emailArg || emailArg === user.email));
       const entries = await tracker.getMonthlyTimeEntries(year, month);
-      const workingDays = calendar.getWorkingDaysForMonth(year, month);
-
       const missingDatesByUser = users.reduce((result, user) => {
         const datesWithEntries = entries
           .filter((entry) => entry.user.id === user.id)
@@ -384,7 +385,7 @@ export default (config, http, slack) => {
         .map((email) => sendSlackReminder(email, missingDatesByUser[email])));
       logger.info('Monthly reminders sent');
     } else {
-      logger.info('It is not the last day of month, reminders not sent');
+      logger.info('It is not the last working day of month, reminders not sent');
     }
   };
 
