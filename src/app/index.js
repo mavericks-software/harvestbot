@@ -132,7 +132,7 @@ export default (config, http, slack) => {
 
     const users = await tracker.getUsers();
     const authorisedUser = users.find(
-      (user) => user.is_admin && validateEmail(user.email) === userName,
+      (user) => user.access_roles.includes('administrator') && validateEmail(user.email) === userName,
     );
     if (!authorisedUser) {
       return `Unable to authorise harvest user ${email}`;
@@ -217,7 +217,7 @@ export default (config, http, slack) => {
 
     const users = await tracker.getUsers();
     const authorisedUser = users.find(
-      (user) => user.is_admin && validateEmail(user.email) === userName,
+      (user) => user.access_roles.includes('administrator') && validateEmail(user.email) === userName,
     );
     if (!authorisedUser) {
       return `Unable to authorise harvest user ${email}`;
@@ -282,7 +282,7 @@ export default (config, http, slack) => {
 
     const users = await tracker.getUsers();
     const authorisedUser = users.find(
-      (user) => user.is_admin && validateEmail(user.email) === userName,
+      (user) => user.access_roles.includes('administrator') && validateEmail(user.email) === userName,
     );
     if (!authorisedUser) {
       return `Unable to authorise harvest user ${email}`;
