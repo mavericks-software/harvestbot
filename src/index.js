@@ -11,13 +11,13 @@ let logger = null;
 let appConfig = null;
 
 const admins = [
-  'UHDKSPAAJ', // samu
   'U01U3H9DC2W', // mikko k
   'U02PNELCN3Z', // Ville-Veikko
 
   'U01894CTTMH', // ansu
   'UF81Z11T4', // jouni
-  'U032DGC20DS', // jenni
+  'U032DGC20DS', // jenni s
+  'U05QYHACLF3', // jenni v
 ];
 
 const getAppConfig = async () => {
