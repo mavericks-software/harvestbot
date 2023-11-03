@@ -17,7 +17,7 @@ const admins = [
   'U01894CTTMH', // ansu
   'UF81Z11T4', // jouni
   'U032DGC20DS', // jenni s
-  'U05QYHACLF3', // jenni v
+  'U063ECDB83C', // jenni v
 ];
 
 const getAppConfig = async () => {
