@@ -19,7 +19,7 @@ export default (config) => {
       }) : undefined;
     const msg = {
       to: email,
-      from: `HarvestBot <noreply@${config.emailDomains[0]}>`,
+      from: 'HarvestBot <services@mavericks.fi>',
       subject,
       text: message,
       attachments,
