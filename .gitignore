@@ -9,3 +9,5 @@ build/
 .idea
 .in
 google-application-credentials.json
+.vscode
+.editorconfig
