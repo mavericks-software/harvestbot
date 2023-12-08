@@ -192,11 +192,10 @@ You need [Terraform](https://www.terraform.io/) to initialize the cloud resource
 * [Create new project](https://console.cloud.google.com/) in Google Cloud console (or use the one you created when setting up local environment).
 * Enable needed APIs for your project in Google Cloud console: Cloud Functions API, Cloud Key Management Service (KMS) API, Cloud Resource Manager API
 * Create datastore database (in datastore mode) to your region (in Google Cloud console).
-* Download to you computer the Google credentials in JSON format for your project's default service account (GCLOUD_PROJECT_ID@appspot.gserviceaccount.com)
+* Set up and login gcloud CLI tool [Documentation](https://cloud.google.com/sdk/docs/how-to)
 * Make sure the service account has following roles (in Google Cloud Console IAM view): Cloud KMS CryptoKey Encrypter/Decrypter, Editor, Project IAM Admin
 * Define following environment variables:
 ```
-export TF_VAR_gcloud_credentials_path=<path_to_service_account_json_file>
 export TF_VAR_gcloud_project_region=<gcloud_region>
 export TF_VAR_gcloud_project_id=<gcloud_project_id>
 export TF_VAR_gcloud_organisation_id=<gcloud_organisation_id>
