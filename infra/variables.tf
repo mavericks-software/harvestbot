@@ -1,6 +1,3 @@
-variable "gcloud_credentials_path" {
-  type = string
-}
 
 variable "gcloud_project_id" {
   type = string

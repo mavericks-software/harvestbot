@@ -10,7 +10,7 @@ import harvest from './harvest';
 import emailer from './emailer';
 import writeBillingReport from './pdf';
 
-export default (config, http, slack) => {
+export default (config, http, slack, harvestAccount = 'mavericks') => {
   const logger = log(config);
   const formatDate = (date) => date.toLocaleDateString(
     'en-US',
@@ -22,7 +22,8 @@ export default (config, http, slack) => {
 
   const analyzer = analyze(config);
   const calendar = cal();
-  const tracker = harvest(config, http);
+
+  const tracker = harvest(config, http, harvestAccount);
   const round = (val) => Math.floor(val * 2) / 2;
 
   const calcFlextime = async (email) => {
@@ -37,8 +38,10 @@ export default (config, http, slack) => {
     if (!entries) {
       return { header: `Unable to find time entries for ${email}` };
     }
+    if (entries.length === 0) {
+      return { header: `No time entries found for ${email}`, messages: [] };
+    }
     const latestFullDay = calendar.getLatestFullWorkingDay();
-
     const range = analyzer.getPeriodRange(entries, latestFullDay);
     logger.info(`Received range starting from ${formatDate(range.start)} to ${formatDate(range.end)}`);
 
@@ -125,18 +128,12 @@ export default (config, http, slack) => {
     year = parseInt(yearArg, 10),
     month = parseInt(monthArg, 10),
   ) => {
-    const userName = validateEmail(email);
-    if (!userName) {
+    const validEmail = validateEmail(email);
+    if (!validEmail) {
       return `Invalid email domain for ${email}`;
     }
 
     const users = await tracker.getUsers();
-    const authorisedUser = users.find(
-      (user) => user.access_roles.includes('administrator') && validateEmail(user.email) === userName,
-    );
-    if (!authorisedUser) {
-      return `Unable to authorise harvest user ${email}`;
-    }
 
     const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
     const allEntries = sortRawTimeEntriesByUser(rawTimeEntries, users);
@@ -183,9 +180,10 @@ export default (config, http, slack) => {
         columns: [{ index: 0, width: 20 }, { index: 1, width: 20 }, { index: 3, width: 20 }],
       }],
     );
-    await emailer(config).sendEmail(authorisedUser.email, 'Monthly harvest stats', `${year}-${month}`, [filePath]);
+    logger.info(`Sending stats to ${email}`);
+    await emailer(config).sendEmail(email, 'Monthly harvest stats', `${year}-${month}`, [filePath]);
     unlinkSync(filePath);
-    return `Stats sent to email ${authorisedUser.email}.`;
+    return `Stats sent to email ${email}.`;
   };
 
   const sortMonthlyUserEntriesByProjectAndTask = (entries) => entries
@@ -210,18 +208,13 @@ export default (config, http, slack) => {
     year = parseInt(yearArg, 10),
     month = parseInt(monthArg, 10),
   ) => {
-    const userName = validateEmail(email);
-    if (!userName) {
+    // use Slack email
+    const validEmail = validateEmail(email);
+    if (!validEmail) {
       return `Invalid email domain for ${email}`;
     }
 
     const users = await tracker.getUsers();
-    const authorisedUser = users.find(
-      (user) => user.access_roles.includes('administrator') && validateEmail(user.email) === userName,
-    );
-    if (!authorisedUser) {
-      return `Unable to authorise harvest user ${email}`;
-    }
 
     const selectedUsers = users.filter((user) => lastNames.includes(user.last_name.toLowerCase()));
     const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
@@ -246,10 +239,10 @@ export default (config, http, slack) => {
         reportPaths.push(filePath);
       });
     });
-
-    await emailer(config).sendEmail(authorisedUser.email, 'Monthly harvest billing reports', `${year}-${month}`, reportPaths);
+    logger.info(`Sending billing report to ${email}`);
+    await emailer(config).sendEmail(email, 'Monthly harvest billing reports', `${year}-${month}`, reportPaths);
     reportPaths.forEach((path) => unlinkSync(path));
-    return `Billing reports sent to email ${authorisedUser.email}.`;
+    return `Billing reports sent to email ${email}.`;
   };
 
   const countWeekdays = (startDate, endDate) => {

@@ -1,7 +1,6 @@
 provider "google" {
-  credentials = "${file("${var.gcloud_credentials_path}")}"
-  region      = "${var.gcloud_project_region}"
-  version     = "~> 3.88"
+  region  = var.gcloud_project_region
+  version = "~> 3.88"
 }
 
 # Project creation manually for now

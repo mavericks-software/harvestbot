@@ -135,6 +135,13 @@ export TASK_ID_EXTRA_PAID_LEAVE=13538291
 export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=14245935
 # Task id for internally invoicable
 export TASK_ID_INTERNALLY_INVOICABLE=14655092
+
+# Comma separate string of Admins slack ids
+export ADMINS=abc123,321cba
+
+# Multiple Harvest accounts as comma separated key values
+export HARVEST_ACCESS_TOKENS=company1:abc123,company2:321cba
+export HARVEST_ACCOUNT_IDS=company1:1234,company2:4321
 ```
 
 ### Running locally

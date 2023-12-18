@@ -10,17 +10,6 @@ import verifier from './verifier';
 let logger = null;
 let appConfig = null;
 
-const admins = [
-  'U01U3H9DC2W', // mikko k
-  'U02PNELCN3Z', // Ville-Veikko
-
-  'U01894CTTMH', // ansu
-  'UF81Z11T4', // jouni
-  'U032DGC20DS', // jenni s
-  'U063ECDB83C', // jenni v
-  'U062QJKGL72', // kirsi k
-];
-
 const getAppConfig = async () => {
   if (appConfig) {
     return appConfig;
@@ -28,6 +17,11 @@ const getAppConfig = async () => {
   appConfig = await settings().getConfig();
   logger = log(appConfig);
   return appConfig;
+};
+
+const validateHarvestAccount = (config, account) => {
+  const harvestAccount = account && account.trim().length > 0 ? account : 'mavericks';
+  return config.harvestAccessTokens && config.harvestAccessTokens[account] && config.harvestAccessTokens && config.harvestAccessTokens[account] ? harvestAccount : 'mavericks';
 };
 
 export const initFlextime = async (req, res) => {
@@ -44,6 +38,9 @@ export const initFlextime = async (req, res) => {
 
     const cmdParts = cmd.split(' ');
     if (cmdParts.length > 0 && cmdParts[0].trim().length > 0) {
+      // Admin slack ids from secrets
+      const admins = config.admins ? config.admins.split(',') : [];
+
       if (!admins.includes(req.body.user_id)) {
         logger.warn(`Received unauthorized stats request from user ${req.body.user_id}`);
         return res.status(401).send('Unauthorized');
@@ -53,12 +50,17 @@ export const initFlextime = async (req, res) => {
       const year = cmdParts.length > 1 ? cmdParts[1] : currentDate.getFullYear();
       const month = cmdParts.length > 2 ? cmdParts[2] : currentDate.getMonth() + 1;
 
+      const harvestAccount = validateHarvestAccount(config, cmdParts[cmdParts.length - 1]);
       switch (cmdParts[0]) {
         case 'stats':
           logger.info('Enqueuing stats request');
           await queue(config)
             .enqueueStatsRequest({
-              userId: req.body.user_id, responseUrl: req.body.response_url, year, month,
+              userId: req.body.user_id,
+              responseUrl: req.body.response_url,
+              year,
+              month,
+              harvestAccount,
             });
           return res.json({ text: 'Starting to generate stats. This may take a while.' });
 
@@ -71,6 +73,7 @@ export const initFlextime = async (req, res) => {
               year,
               month,
               lastNames: cmdParts.slice(3).map((lastName) => lastName.toLowerCase()),
+              harvestAccount,
             });
           return res.json({ text: 'Starting to generate billing reports. This may take a while.' });
 
@@ -83,6 +86,7 @@ export const initFlextime = async (req, res) => {
               year,
               month,
               range: cmdParts.length > 3 ? cmdParts[3] : 6,
+              harvestAccount,
             });
           return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
 
@@ -106,7 +110,7 @@ export const calcFlextime = async (message) => {
   const config = await getAppConfig();
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
-  const { userId } = request;
+  const { userId, harvestAccount } = request;
 
   if (userId) {
     logger.info(`Fetching data for user id ${userId}`);
@@ -120,7 +124,7 @@ export const calcFlextime = async (message) => {
     await db(config).storeUserData(userId, email);
     logger.info('User data stored');
 
-    const data = await application(config, http).calcFlextime(email);
+    const data = await application(config, http, harvestAccount).calcFlextime(email);
     logger.info('Flextime calculated');
 
     return slack.postMessage(userId, data.header, data.messages);
@@ -150,16 +154,19 @@ export const calcStats = async (message) => {
   const config = await getAppConfig();
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
-  const { userId, year, month } = request;
+  const {
+    userId, year, month, harvestAccount,
+  } = request;
 
   if (userId) {
-    logger.info(`Calculating stats requested by user ${userId}`);
+    logger.info(`Calculating stats requested by user ${userId} to harvest account ${harvestAccount}`);
     const email = await slack.getUserEmailForId(userId); // TODO: need slack admin role?
     if (!email) {
       return slack.postMessage(userId, 'Cannot find email for Slack user id');
     }
 
-    const result = await application(config, http).generateStats(year, month, email);
+    const result = await application(config, http, slack, harvestAccount)
+      .generateStats(year, month, email);
     logger.info('Stats generated');
 
     return slack.postMessage(userId, result);
@@ -172,17 +179,17 @@ export const calcBillingReports = async (message) => {
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
   const {
-    userId, year, month, lastNames,
+    userId, year, month, lastNames, harvestAccount,
   } = request;
 
   if (userId) {
-    logger.info(`Calculating billing reports requested by user ${userId}`);
+    logger.info(`Calculating billing reports requested by user ${userId} for harvest account ${harvestAccount}`);
     const email = await slack.getUserEmailForId(userId); // TODO: need slack admin role?
     if (!email) {
       return slack.postMessage(userId, 'Cannot find email for Slack user id');
     }
 
-    const result = await application(config, http)
+    const result = await application(config, http, slack, harvestAccount)
       .generateBillingReports(year, month, lastNames, email);
     logger.info('Billing reports generated');
 
