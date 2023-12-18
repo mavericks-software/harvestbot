@@ -6,6 +6,12 @@ import {
 } from './defaults';
 import decrypter from '../cloud/key-ring';
 
+// Format string 'company1:bar,company2:foo' to {company1: 'bar', company2: 'foo'}
+const keyPairFromStr = (str) => (str ? str
+  .split(',')
+  .map((pair) => pair.trim().split(':'))
+  .reduce((acc, curr) => ({ ...acc, [curr[0]]: curr[1].trim() }), {}) : {});
+
 export default () => {
   const inGoogleCloud = process.env.FUNCTION_NAME;
   const logger = log({ inGoogleCloud });
@@ -18,13 +24,19 @@ export default () => {
     region: getEnvParam('FUNCTION_REGION'),
   };
   const { decryptSecret } = decrypter(baseConfig);
-
   const getConfig = async () => {
     const secretConfigString = await decryptSecret();
     const secretConfig = JSON.parse(secretConfigString);
+
+    const harvestAccessTokens = keyPairFromStr(secretConfig.harvestAccessTokens);
+    const harvestAccountIds = keyPairFromStr(secretConfig.harvestAccountIds);
+
     return {
       ...baseConfig,
       ...secretConfig,
+      harvestAccessTokens,
+      harvestAccountIds,
+      admins: secretConfig.admins,
       emailDomains: secretConfig.emailDomains
         ? secretConfig.emailDomains.split(',')
         : [],

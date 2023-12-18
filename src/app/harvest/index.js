@@ -5,15 +5,28 @@ import {
   map,
   mergeMap,
   reduce,
+  catchError,
 } from 'rxjs/operators';
 import { DateTime } from 'luxon';
+import log from '../../log';
 
-export default (config, http) => {
+export default (config, http, harvestAccount = 'mavericks') => {
+  const logger = log(config);
+
+  logger.info(`Using Harvest account ${harvestAccount}`);
+  const harvestAccessToken = config.harvestAccessTokens
+  && config.harvestAccessTokens[harvestAccount]
+    ? config.harvestAccessTokens[harvestAccount]
+    : config.harvestAccessToken;
+  const harvestAccountId = config.harvestAccountIds && config.harvestAccountIds[harvestAccount]
+    ? config.harvestAccountIds[harvestAccount]
+    : config.harvestAccountId;
+
   const api = http(
     'https://api.harvestapp.com/v2/',
     {
-      Authorization: `Bearer ${config.harvestAccessToken}`,
-      'Harvest-Account-Id': config.harvestAccountId,
+      Authorization: `Bearer ${harvestAccessToken}`,
+      'Harvest-Account-Id': harvestAccountId,
     },
   );
 
@@ -133,7 +146,11 @@ export default (config, http) => {
 
   const getTimeEntriesForEmail = (userName, validateEmail = () => null) => getAllUsers()
     .pipe(
-      first(({ email }) => userName === validateEmail(email)),
+      first(({ email }) => userName === validateEmail(email)), // Returns EmptyError if not found
+      catchError((e) => {
+        logger.error(`Error happened while getTimeEntriesForEmail Error: ${e}`);
+        return [];
+      }),
       mergeMap(({ id }) => getTimeEntriesForId(id)),
       reduce(collect, []),
     )
