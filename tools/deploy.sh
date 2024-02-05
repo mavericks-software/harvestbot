@@ -14,3 +14,4 @@ gcloud functions deploy calcBillingReports --set-env-vars GCLOUD_PROJECT=$GCLOUD
 gcloud functions deploy calcWorkingHours --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs20 --timeout 540 --trigger-topic workinghours
 gcloud functions deploy sendReminders --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs20 --timeout 540 --trigger-http
 gcloud functions deploy notifyUsers --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs20 --trigger-http
+gcloud functions deploy sendMissingHoursReport --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs20 --trigger-topic missingWorkhoursReport
