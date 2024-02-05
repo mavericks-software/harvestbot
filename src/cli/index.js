@@ -84,7 +84,15 @@ export default (config, http) => {
     console.log(`export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=${conf.taskIds.productServiceDevelopment}`);
     console.log(`export TASK_ID_INTERNALLY_INVOICABLE=${conf.taskIds.internallyInvoicable}`);
     console.log(`export ADMINS=${conf.admins}`);
+    console.log(`export MISSING_WORKHOURS_REPORT_EMAIL=${conf.missingWorkhoursReportEmail}`);
     /* eslint-enable no-console */
+  };
+
+  const generateMissingHoursReport = async (harvestAccount = 'mavericks') => {
+    logger.info(`Generating missing workhours report for harvest account ${harvestAccount}`);
+    await application(config, http, slack, harvestAccount)
+      .generateMissingWorkHoursReport(config.missingWorkhoursReportEmail);
+    logger.info(`Sent missing workhours report for harvest account ${harvestAccount}`);
   };
 
   const start = () => {
@@ -119,6 +127,10 @@ export default (config, http) => {
       .command('decrypt')
       .description('Decrypt and show app configuration.')
       .action(decryptConfiguration);
+    program
+      .command('report-missing-hours [harvestAccount]')
+      .description('Send report from missing hours in previous month')
+      .action(generateMissingHoursReport);
     program.parse(process.argv);
   };
 

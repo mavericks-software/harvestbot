@@ -232,3 +232,17 @@ export const sendReminders = async (req, res) => {
   await application(config, http, slack).sendMonthlyReminders();
   return res.json({ text: 'Monthly reminders triggered succesfully' });
 };
+
+// Invoke through pub/sub message
+export const sendMissingHoursReport = async (message) => {
+  const config = await getAppConfig();
+  if (!config.missingWorkhoursReportEmail || config.missingWorkhoursReportEmail.length === 0) {
+    logger.warn(`config.missingWorkhoursReportEmail is missing, cannot generate report, exiting. config.missingWorkhoursReportEmail: ${config.missingWorkhoursReportEmail}`);
+    return;
+  }
+  const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
+  const { harvestAccount } = request;
+  await application(config, http, harvestAccount)
+    .generateMissingWorkHoursReport(config.missingWorkhoursReportEmail);
+  logger.info('Missing hours report generated and sent');
+};
