@@ -294,3 +294,11 @@ As of 04/2022, the Google Cloud Scheduler only supports the basic cron syntax, s
 gcloud scheduler jobs create http firstReminder --schedule="0 13 * * *" --time-zone Europe/Helsinki --uri=<sendReminders http trigger url> --oidc-service-account-email=<gcloud_project_id>@appspot.gserviceaccount.com
 gcloud scheduler jobs create http secondReminder --schedule="0 18 * * *" --time-zone Europe/Helsinki --uri=<sendReminders http trigger url> --oidc-service-account-email=<gcloud_project_id>@appspot.gserviceaccount.com
 ```
+
+### Admin missing hours report
+
+Automated task similar to reminders for missing hours. Purpose is to send report collected from Harvest to admin about missing work hours. This reporting is triggered 1st day of the month from previous month unfilled working hours with GCP Cloud Scheduler which puts message to Pub/Sub with topic `missingWorkhoursReport` and processed with function `sendMissingHoursReport`
+```
+gcloud scheduler jobs create pubsub reportMissingHour --location=<project-region> --schedule="0 7 1 * *" --time-zone Europe/Helsinki --topic=missingWorkhoursReport --message-body="{}"
+```
+

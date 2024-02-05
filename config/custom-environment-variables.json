@@ -12,6 +12,7 @@
   "workingHoursReportHeaders": "WORKING_HOURS_REPORT_COLUMN_HEADERS",
   "sendGridApiKey": "SENDGRID_API_KEY",
   "admins": "ADMINS",
+  "missingWorkhoursReportEmail": "MISSING_WORKHOURS_REPORT_EMAIL",
   "taskIds": {
     "publicHoliday": "TASK_ID_PUBLIC_HOLIDAY",
     "vacation": "TASK_ID_VACATION",

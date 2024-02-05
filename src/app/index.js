@@ -345,6 +345,22 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     }
   };
 
+  const fetchMissingWorkhourDatesforUsers = async (year, month, users) => {
+    const workingDays = calendar.getWorkingDaysForMonth(year, month);
+    const entries = await tracker.getMonthlyTimeEntries(year, month);
+    return users.reduce((result, user) => {
+      const datesWithEntries = entries
+        .filter((entry) => entry.user.id === user.id)
+        .map((entry) => entry.spent_date);
+      const missingDates = workingDays
+        .map((date) => date.toISOString().split('T')[0])
+        .filter((date) => !datesWithEntries.includes(date));
+      return missingDates.length > 0
+        ? { ...result, [user.email]: missingDates }
+        : result;
+    }, {});
+  };
+
   const sendMonthlyReminders = async (
     yearArg,
     monthArg,
@@ -361,18 +377,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
         .filter((user) => user.is_active
           && !user.is_contractor
           && (!emailArg || emailArg === user.email));
-      const entries = await tracker.getMonthlyTimeEntries(year, month);
-      const missingDatesByUser = users.reduce((result, user) => {
-        const datesWithEntries = entries
-          .filter((entry) => entry.user.id === user.id)
-          .map((entry) => entry.spent_date);
-        const missingDates = workingDays
-          .map((date) => date.toISOString().split('T')[0])
-          .filter((date) => !datesWithEntries.includes(date));
-        return missingDates.length > 0
-          ? { ...result, [user.email]: missingDates }
-          : result;
-      }, {});
+      const missingDatesByUser = await fetchMissingWorkhourDatesforUsers(year, month, users);
 
       await Promise.all(Object.keys(missingDatesByUser)
         .map((email) => sendSlackReminder(email, missingDatesByUser[email])));
@@ -382,11 +387,68 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     }
   };
 
+  const generateMissingWorkHoursReport = async (reportEmail) => {
+    if (!reportEmail || reportEmail.length === 0) {
+      logger.warn('email is missing, cannot generate report, exiting');
+      return;
+    }
+
+    const year = calendar.CURRENT_MONTH > 0 ? calendar.CURRENT_YEAR : calendar.CURRENT_YEAR - 1;
+    const previousMonth = calendar.CURRENT_MONTH > 0 ? calendar.CURRENT_MONTH : 12;
+
+    logger.info(`Fetching users and entries for year ${year} month ${previousMonth} from timetracker`);
+    const users = (await tracker.getUsers())
+      .filter((user) => user.is_active
+        && !user.is_contractor
+        && !user.roles.includes['non-invoicable']);
+
+    const missingDatesByUser = await fetchMissingWorkhourDatesforUsers(year, previousMonth, users);
+
+    logger.info('Fetched and sorted entries, generate workbook');
+
+    const usersWithMissingHours = Object.keys(missingDatesByUser);
+
+    const workbookData = usersWithMissingHours
+      .map((email) => {
+        const user = users.find((usr) => usr.email === email);
+        const missingDates = missingDatesByUser[email];
+        return missingDates.map((date, i) => ([(i > 0 ? '' : `${user.first_name} ${user.last_name}`), date]));
+      }).flat(1);
+
+    logger.info(`Workbook length ${workbookData.length} rows from ${usersWithMissingHours.length} users`);
+
+    const title = `missing-working-hours-${year}-${previousMonth}`;
+    const fileName = `${title}.xlsx`;
+    const filePath = `${tmpdir()}/${fileName}`;
+
+    try {
+      excel().writeWorkbook(
+        filePath,
+        [{
+          rows: workbookData,
+          title,
+          headers: ['name', 'date'],
+          columns: [
+            { index: 0, width: 20 },
+            { index: 1, width: 15 },
+          ],
+        }],
+      );
+      await emailer(config).sendEmail(reportEmail, 'Working hours report', title, [filePath]);
+      logger.info('Monthly missing hours report sent');
+    } catch (error) {
+      logger.error(`Monthly missing hours report failed. Error: ${error}`);
+    } finally {
+      unlinkSync(filePath);
+    }
+  };
+
   return {
     calcFlextime,
     generateStats,
     generateBillingReports,
     generateWorkingHoursReport,
     sendMonthlyReminders,
+    generateMissingWorkHoursReport,
   };
 };
