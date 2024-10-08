@@ -1,7 +1,7 @@
 set -e
 
-echo "Activate service account"
-gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
+# echo "Activate service account"
+# gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS
 
 echo "Set project"
 gcloud --quiet config set project $GCLOUD_PROJECT

@@ -31,7 +31,21 @@ export const initFlextime = async (req, res) => {
     const cmd = req.body.text;
 
     if (cmd === 'help') {
-      return res.json({ text: '_Bot for calculating your harvest balance. Use /flextime to start calculation._' });
+      return res.json({
+        text: `
+Bot for calculating your hourly balance. Use /flextime to start calculation. Usage: \n
+/flextime stats <year> <month> [account] \n
+  - send monthly reports for the listed users. \n
+/flextime report <year> <month> [account] \n
+  - send monthly reports for the listed users. \n
+  - supports agileday as an account (soon) \n
+/flextime hours <email> <year> <month> <range> [account] \n
+  - send working hours report. \n
+  - supports agileday as an account (soon) \n
+/flextime [account] \n
+  - calculate flex saldo \n
+  - supports agileday as an account (soon) \n`,
+      });
     }
 
     logger.info(`Received valid Slack request with cmd ${cmd}`);
@@ -51,6 +65,8 @@ export const initFlextime = async (req, res) => {
       const month = cmdParts.length > 2 ? cmdParts[2] : currentDate.getMonth() + 1;
 
       const harvestAccount = validateHarvestAccount(config, cmdParts[cmdParts.length - 1]);
+      // TODO: clean up implementation when switch to Agileday is done.
+      const isAgileday = cmdParts[cmdParts.length - 1] === 'agileday';
       switch (cmdParts[0]) {
         case 'stats':
           logger.info('Enqueuing stats request');
@@ -61,11 +77,12 @@ export const initFlextime = async (req, res) => {
               year,
               month,
               harvestAccount,
+              isAgileday: false,
             });
           return res.json({ text: 'Starting to generate stats. This may take a while.' });
 
         case 'report':
-          logger.info('Enqueuing billing reports request');
+          logger.info('Enqueuing Harvest billing reports request');
           await queue(config)
             .enqueueBillingReportsRequest({
               userId: req.body.user_id,
@@ -74,6 +91,7 @@ export const initFlextime = async (req, res) => {
               month,
               lastNames: cmdParts.slice(3).map((lastName) => lastName.toLowerCase()),
               harvestAccount,
+              isAgileday,
             });
           return res.json({ text: 'Starting to generate billing reports. This may take a while.' });
 
@@ -87,9 +105,19 @@ export const initFlextime = async (req, res) => {
               month,
               range: cmdParts.length > 3 ? cmdParts[3] : 6,
               harvestAccount,
+              isAgileday,
             });
           return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
-
+        case 'agileday':
+          // TODO: clean up implementation when switch to Agileday is done.
+          logger.info('Enqueuing flex time request');
+          await queue(config)
+            .enqueueFlexTimeRequest({
+              userId: req.body.user_id,
+              responseUrl: req.body.response_url,
+              isAgileday: true,
+            });
+          return res.json({ text: 'Starting to calculate flextime. This may take a while... Join channel #harvest for weekly notifications.' });
         default:
           logger.warn('Received unknown command');
           return res.status(401).send('Unknown command');
@@ -98,7 +126,11 @@ export const initFlextime = async (req, res) => {
 
     logger.info('Enqueuing flex time request');
     await queue(config)
-      .enqueueFlexTimeRequest({ userId: req.body.user_id, responseUrl: req.body.response_url });
+      .enqueueFlexTimeRequest({
+        userId: req.body.user_id,
+        responseUrl: req.body.response_url,
+        isAgileday: false,
+      });
     return res.json({ text: 'Starting to calculate flextime. This may take a while... Join channel #harvest for weekly notifications.' });
   }
 
@@ -110,7 +142,7 @@ export const calcFlextime = async (message) => {
   const config = await getAppConfig();
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
-  const { userId, harvestAccount } = request;
+  const { userId, harvestAccount, isAgileday } = request;
 
   if (userId) {
     logger.info(`Fetching data for user id ${userId}`);
@@ -124,7 +156,9 @@ export const calcFlextime = async (message) => {
     await db(config).storeUserData(userId, email);
     logger.info('User data stored');
 
-    const data = await application(config, http, harvestAccount).calcFlextime(email);
+    const data = isAgileday
+      ? await application(config, http, harvestAccount).generateAgiledayFlextime(email)
+      : await application(config, http, harvestAccount).generateHarvestFlextime(email);
     logger.info('Flextime calculated');
 
     return slack.postMessage(userId, data.header, data.messages);
@@ -179,7 +213,7 @@ export const calcBillingReports = async (message) => {
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
   const {
-    userId, year, month, lastNames, harvestAccount,
+    userId, year, month, lastNames, harvestAccount, isAgileday,
   } = request;
 
   if (userId) {
@@ -189,8 +223,13 @@ export const calcBillingReports = async (message) => {
       return slack.postMessage(userId, 'Cannot find email for Slack user id');
     }
 
-    const result = await application(config, http, slack, harvestAccount)
-      .generateBillingReports(year, month, lastNames, email);
+    // TODO: clean up implementation when switch to Agileday is done.
+    const result = isAgileday
+      ? await application(config, http, slack, harvestAccount)
+        .generateAgiledayBillingReports(year, month, lastNames, email)
+      : await application(config, http, slack, harvestAccount)
+        .generateHarvestBillingReports(year, month, lastNames, email);
+
     logger.info('Billing reports generated');
 
     return slack.postMessage(userId, result);

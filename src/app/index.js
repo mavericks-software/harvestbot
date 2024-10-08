@@ -6,9 +6,13 @@ import log from '../log';
 import analyze from './analyzer';
 import excel from './excel';
 import cal from './calendar';
-import harvest from './harvest';
+import harvest, {
+  harvestGenerateMonthlyHoursStats, harvestSortMonthlyUserEntriesByProjectAndTask,
+  harvestSortRawTimeEntriesByUser,
+} from './harvest';
 import emailer from './emailer';
 import writeBillingReport from './pdf';
+import agileday, { agiledaySortMonthlyUserEntriesByProjectAndTask, agiledaySortRawTimeEntriesByUser } from './agileday';
 
 export default (config, http, slack, harvestAccount = 'mavericks') => {
   const logger = log(config);
@@ -23,10 +27,23 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
   const analyzer = analyze(config);
   const calendar = cal();
 
-  const tracker = harvest(config, http, harvestAccount);
+  const harvestTracker = harvest(config, http, harvestAccount);
+  const agiledayTracker = agileday(config, http);
   const round = (val) => Math.floor(val * 2) / 2;
 
-  const calcFlextime = async (email) => {
+  const countWeekdays = (startDate, endDate) => {
+    const d = new Date(startDate);
+    let count = 0;
+    while (d <= endDate) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) {
+        count += 1;
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  };
+
+  const generateHarvestFlextime = async (email) => {
     const userName = validateEmail(email);
     if (!userName) {
       return { header: `Invalid email domain for ${email}` };
@@ -34,7 +51,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
 
     logger.info(`Fetch data for ${email}`);
 
-    const entries = await tracker.getTimeEntriesForEmail(userName, validateEmail);
+    const entries = await harvestTracker.getTimeEntriesForEmail(userName, validateEmail);
     if (!entries) {
       return { header: `Unable to find time entries for ${email}` };
     }
@@ -69,56 +86,46 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     return { header, messages };
   };
 
-  const sortRawTimeEntriesByUser = (rawTimeEntries, users, includeNonBillable = true) => {
-    const orderValue = (a, b) => (a < b ? -1 : 1);
-    const compare = (a, b) => (a === b ? 0 : orderValue(a, b));
-    const sortedUsers = users.sort(
-      (a, b) => compare(a.first_name, b.first_name) || compare(a.last_name, b.last_name),
-    );
-    const timeEntries = sortedUsers.map(({ id }) => rawTimeEntries
-      .filter((entry) => entry.user.id === id)
-      .filter((entry) => includeNonBillable || entry.billable)
-      .map(({
-        spent_date: date, hours, billable, notes,
-        project: { id: projectId, name: projectName },
-        task: { id: taskId, name: taskName },
-      }) => ({
-        date, hours, billable, projectId, projectName, taskId, taskName, notes,
-      })));
-    return timeEntries.reduce((result, entries, index) => {
-      const user = sortedUsers[index];
-      return entries.length > 0 || user.is_active
-        ? [...result, { user, entries }]
-        : result;
-    },
-    []);
-  };
+  const generateAgiledayFlextime = async (email) => {
+    if (!validateEmail(email)) {
+      return { header: `Invalid email domain for ${email}` };
+    }
 
-  const generateMonthlyHoursStats = async (
-    invoicableEntries,
-    nonInvoicableEntries,
-    contractorEntries,
-    year,
-    month,
-  ) => {
-    const workDaysInMonth = calendar.getWorkingDaysTotalForMonth(year, month);
-    return [
-      { name: 'CALENDAR DAYS', days: workDaysInMonth },
-      {},
-      { name: 'INVOICABLE' },
-      ...invoicableEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
-      {},
-      { name: 'NON-INVOICABLE' },
-      ...nonInvoicableEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
-      {},
-      { name: 'CONTRACTORS' },
-      ...contractorEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+    logger.info(`Fetch data for ${email}`);
+
+    const entries = await agiledayTracker.getTimeEntriesForEmail(email);
+    if (!entries) {
+      return { header: `Unable to find time entries for ${email}` };
+    }
+    if (entries.length === 0) {
+      return { header: `No time entries found for ${email}`, messages: [] };
+    }
+    const latestFullDay = calendar.getLatestFullWorkingDay();
+    const range = analyzer.getPeriodRange(entries, latestFullDay);
+    logger.info(`Received range starting from ${formatDate(range.start)} to ${formatDate(range.end)}`);
+
+    const totalHours = calendar.getTotalWorkHoursSinceDate(range.start, range.end);
+    logger.info(`Total working hours from range start ${totalHours}`);
+
+    const result = analyzer.calculateWorkedHours(range.entries);
+    if (result.warnings.length > 0) {
+      logger.info(result.warnings);
+    } else {
+      logger.info('No warnings!');
+    }
+
+    const header = `*Your flex hours count: ${round(result.total - totalHours)}*`;
+    const messages = [
+      `Latest calendar working day: ${formatDate(range.end)}`,
+      `Last time you have recorded hours: ${formatDate(new Date(range.entries[range.entries.length - 1].date))}`,
+      ...result.warnings,
+      `Current month ${result.billablePercentageCurrentMonth}% billable`,
     ];
-  };
 
-  const generateMonthlyBillingStats = async (entries) => {
-    const taskRates = await tracker.getTaskAssignments();
-    return analyzer.getBillableStats(entries, taskRates);
+    logger.info(header);
+    logger.info('All done!');
+
+    return { header, messages };
   };
 
   const generateStats = async (
@@ -133,10 +140,10 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
       return `Invalid email domain for ${email}`;
     }
 
-    const users = await tracker.getUsers();
+    const users = await harvestTracker.getUsers();
 
-    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
-    const allEntries = sortRawTimeEntriesByUser(rawTimeEntries, users);
+    const rawTimeEntries = await harvestTracker.getMonthlyTimeEntries(year, month);
+    const allEntries = harvestSortRawTimeEntriesByUser(rawTimeEntries, users);
     const entriesByType = allEntries.reduce((result, entry) => {
       if (entry.user.roles.includes('Non-billable') && !entry.user.is_contractor) {
         result.nonInvoicable.push(entry);
@@ -153,14 +160,18 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
       contractors: [],
     });
 
-    const monthlyHoursRows = await generateMonthlyHoursStats(
+    const monthlyHoursRows = await harvestGenerateMonthlyHoursStats(
+      analyzer,
+      calendar,
       entriesByType.invoicable,
       entriesByType.nonInvoicable,
       entriesByType.contractors,
       year,
       month,
     );
-    const monthlyBillingRows = await generateMonthlyBillingStats(allEntries);
+
+    const taskRates = await harvestTracker.getTaskAssignments();
+    const monthlyBillingRows = analyzer.getBillableStats(allEntries, taskRates);
 
     const fileName = `${year}-${month}-hours-${new Date().getTime()}.xlsx`;
     const filePath = `${tmpdir()}/${fileName}`;
@@ -186,21 +197,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     return `Stats sent to email ${email}.`;
   };
 
-  const sortMonthlyUserEntriesByProjectAndTask = (entries) => entries
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .reduce((previous, entry) => {
-      const result = previous;
-      result[entry.projectId] = result[entry.projectId]
-        || { projectName: entry.projectName, totalHours: 0, tasks: {} };
-      result[entry.projectId].totalHours += entry.hours;
-      result[entry.projectId].tasks[entry.taskId] = result[entry.projectId].tasks[entry.taskId]
-        || { taskName: entry.taskName, totalHours: 0, entries: [] };
-      result[entry.projectId].tasks[entry.taskId].totalHours += entry.hours;
-      result[entry.projectId].tasks[entry.taskId].entries.push(entry);
-      return result;
-    }, {});
-
-  const generateBillingReports = async (
+  const generateHarvestBillingReports = async (
     yearArg,
     monthArg,
     lastNames,
@@ -214,17 +211,16 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
       return `Invalid email domain for ${email}`;
     }
 
-    const users = await tracker.getUsers();
-
+    const users = await harvestTracker.getUsers();
     const selectedUsers = users.filter((user) => lastNames.includes(user.last_name.toLowerCase()));
-    const rawTimeEntries = await tracker.getMonthlyTimeEntries(year, month);
-    const entries = sortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false)
+    const rawTimeEntries = await harvestTracker.getMonthlyTimeEntries(year, month);
+    const entries = harvestSortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false)
       .map((monthlyEntries) => ({
         user: {
           firstName: monthlyEntries.user.first_name,
           lastName: monthlyEntries.user.last_name,
         },
-        entries: sortMonthlyUserEntriesByProjectAndTask(monthlyEntries.entries),
+        entries: harvestSortMonthlyUserEntriesByProjectAndTask(monthlyEntries.entries),
       }));
 
     const reportPaths = [];
@@ -242,19 +238,48 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     logger.info(`Sending billing report to ${email}`);
     await emailer(config).sendEmail(email, 'Monthly harvest billing reports', `${year}-${month}`, reportPaths);
     reportPaths.forEach((path) => unlinkSync(path));
-    return `Billing reports sent to email ${email}.`;
+    return `Billing reports (harvest) sent to email ${email}.`;
   };
 
-  const countWeekdays = (startDate, endDate) => {
-    const d = new Date(startDate);
-    let count = 0;
-    while (d <= endDate) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) {
-        count += 1;
-      }
-      d.setDate(d.getDate() + 1);
+  const generateAgiledayBillingReports = async (
+    yearArg,
+    monthArg,
+    lastNames,
+    email,
+    year = parseInt(yearArg, 10),
+    month = parseInt(monthArg, 10),
+  ) => {
+    // use Slack email
+    const validEmail = validateEmail(email);
+    if (!validEmail) {
+      return `Invalid email domain for ${email}`;
     }
-    return count;
+    const users = await agiledayTracker.getUsers();
+
+    const selectedUsers = users.filter((user) => lastNames.includes(user.lastName.toLowerCase()));
+
+    const rawTimeEntries = await agiledayTracker.getMonthlyTimeEntries(year, month);
+    const entries = (await agiledaySortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false))
+      .map((monthlyEntries) => ({
+        user: monthlyEntries.user,
+        entries: agiledaySortMonthlyUserEntriesByProjectAndTask(monthlyEntries.entries),
+      }));
+    const reportPaths = [];
+    entries.forEach((userEntries) => {
+      Object.keys(userEntries.entries).forEach((projectId) => {
+        const projectEntries = userEntries.entries[projectId];
+        const escapedProjectName = projectEntries.projectName.replace(/(\W+)/gi, '_');
+        const fileName = `${userEntries.user.lastName}_${escapedProjectName}_${year}_${month}.pdf`;
+        const filePath = `${tmpdir()}/${fileName}`;
+        logger.info(`Writing billing report to ${filePath}`);
+        writeBillingReport(filePath, userEntries.user, projectEntries);
+        reportPaths.push(filePath);
+      });
+    });
+    logger.info(`Sending billing report to ${email}`);
+    await emailer(config).sendEmail(email, 'Monthly agileday billing reports', `${year}-${month}`, reportPaths);
+    reportPaths.forEach((path) => unlinkSync(path));
+    return `Billing reports (agileday) sent to email ${email}.`;
   };
 
   const generateWorkingHoursReport = async (
@@ -273,7 +298,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
       return `Invalid email domain for ${email}`;
     }
 
-    const users = await tracker.getUsers();
+    const users = await harvestTracker.getUsers();
     const authorisedUser = users.find(
       (user) => user.access_roles.includes('administrator') && validateEmail(user.email) === userName,
     );
@@ -289,9 +314,9 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     endDate.setDate(0);
 
     const numOfWeekdays = countWeekdays(startDate, endDate);
-    const rawTimeEntries = await tracker.getTimeEntries(startDate, endDate);
+    const rawTimeEntries = await harvestTracker.getTimeEntries(startDate, endDate);
     const selectedUsers = users.filter((user) => user.is_active && !user.is_contractor);
-    const reportData = sortRawTimeEntriesByUser(rawTimeEntries, selectedUsers)
+    const reportData = harvestSortRawTimeEntriesByUser(rawTimeEntries, selectedUsers)
       .map((userData) => analyzer.getWorkingHoursReportData(userData, numOfWeekdays));
 
     const title = `working-hours-${startDate.getFullYear()}-${startDate.getMonth() + 1}-${endDate.getFullYear()}-${endDate.getMonth() + 1}`;
@@ -347,7 +372,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
 
   const fetchMissingWorkhourDatesforUsers = async (year, month, users) => {
     const workingDays = calendar.getWorkingDaysForMonth(year, month);
-    const entries = await tracker.getMonthlyTimeEntries(year, month);
+    const entries = await harvestTracker.getMonthlyTimeEntries(year, month);
     return users.reduce((result, user) => {
       const datesWithEntries = entries
         .filter((entry) => entry.user.id === user.id)
@@ -373,7 +398,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     const lastWorkingDay = workingDays[workingDays.length - 1];
     const isLastWorkingDay = calendar.CURRENT_DATE.toDateString() === lastWorkingDay.toDateString();
     if (!checkIfLastWorkingDay || isLastWorkingDay) {
-      const users = (await tracker.getUsers())
+      const users = (await harvestTracker.getUsers())
         .filter((user) => user.is_active
           && !user.is_contractor
           && (!emailArg || emailArg === user.email));
@@ -397,7 +422,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     const previousMonth = calendar.CURRENT_MONTH > 0 ? calendar.CURRENT_MONTH : 12;
 
     logger.info(`Fetching users and entries for year ${year} month ${previousMonth} from timetracker`);
-    const users = (await tracker.getUsers())
+    const users = (await harvestTracker.getUsers())
       .filter((user) => user.is_active
         && !user.is_contractor
         && !user.roles.includes['non-invoicable']);
@@ -444,9 +469,11 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
   };
 
   return {
-    calcFlextime,
+    generateHarvestFlextime,
+    generateAgiledayFlextime,
     generateStats,
-    generateBillingReports,
+    generateHarvestBillingReports,
+    generateAgiledayBillingReports,
     generateWorkingHoursReport,
     sendMonthlyReminders,
     generateMissingWorkHoursReport,

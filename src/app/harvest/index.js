@@ -10,6 +10,73 @@ import {
 import { DateTime } from 'luxon';
 import log from '../../log';
 
+export const harvestSortRawTimeEntriesByUser = (
+  rawTimeEntries,
+  users,
+  includeNonBillable = true,
+) => {
+  const orderValue = (a, b) => (a < b ? -1 : 1);
+  const compare = (a, b) => (a === b ? 0 : orderValue(a, b));
+  const sortedUsers = users.sort(
+    (a, b) => compare(a.first_name, b.first_name) || compare(a.last_name, b.last_name),
+  );
+  const timeEntries = sortedUsers.map(({ id }) => rawTimeEntries
+    .filter((entry) => entry.user.id === id)
+    .filter((entry) => includeNonBillable || entry.billable)
+    .map(({
+      spent_date: date, hours, billable, notes,
+      project: { id: projectId, name: projectName },
+      task: { id: taskId, name: taskName },
+    }) => ({
+      date, hours, billable, projectId, projectName, taskId, taskName, notes,
+    })));
+  return timeEntries.reduce((result, entries, index) => {
+    const user = sortedUsers[index];
+    return entries.length > 0 || user.is_active
+      ? [...result, { user, entries }]
+      : result;
+  },
+  []);
+};
+
+export const harvestSortMonthlyUserEntriesByProjectAndTask = (entries) => entries
+  .sort((a, b) => a.date.localeCompare(b.date))
+  .reduce((previous, entry) => {
+    const result = previous;
+    result[entry.projectId] = result[entry.projectId]
+      || { projectName: entry.projectName, totalHours: 0, tasks: {} };
+    result[entry.projectId].totalHours += entry.hours;
+    result[entry.projectId].tasks[entry.taskId] = result[entry.projectId].tasks[entry.taskId]
+      || { taskName: entry.taskName, totalHours: 0, entries: [] };
+    result[entry.projectId].tasks[entry.taskId].totalHours += entry.hours;
+    result[entry.projectId].tasks[entry.taskId].entries.push(entry);
+    return result;
+  }, {});
+
+export const harvestGenerateMonthlyHoursStats = async (
+  calendar,
+  analyzer,
+  invoicableEntries,
+  nonInvoicableEntries,
+  contractorEntries,
+  year,
+  month,
+) => {
+  const workDaysInMonth = calendar.getWorkingDaysTotalForMonth(year, month);
+  return [
+    { name: 'CALENDAR DAYS', days: workDaysInMonth },
+    {},
+    { name: 'INVOICABLE' },
+    ...invoicableEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+    {},
+    { name: 'NON-INVOICABLE' },
+    ...nonInvoicableEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+    {},
+    { name: 'CONTRACTORS' },
+    ...contractorEntries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+  ];
+};
+
 export default (config, http, harvestAccount = 'mavericks') => {
   const logger = log(config);
 
