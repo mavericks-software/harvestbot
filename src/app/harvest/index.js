@@ -54,8 +54,8 @@ export const harvestSortMonthlyUserEntriesByProjectAndTask = (entries) => entrie
   }, {});
 
 export const harvestGenerateMonthlyHoursStats = async (
-  analyzer,
   calendar,
+  analyzer,
   invoicableEntries,
   nonInvoicableEntries,
   contractorEntries,

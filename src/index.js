@@ -76,7 +76,7 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
               year,
               month,
               harvestAccount,
-              isAgileday: false,
+              isAgileday,
             });
           return res.json({ text: 'Starting to generate stats. This may take a while.' });
 
@@ -176,7 +176,7 @@ export const calcStats = async (message) => {
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
   const {
-    userId, year, month, harvestAccount,
+    userId, year, month, harvestAccount, isAgileday,
   } = request;
 
   if (userId) {
@@ -186,8 +186,11 @@ export const calcStats = async (message) => {
       return slack.postMessage(userId, 'Cannot find email for Slack user id');
     }
 
-    const result = await application(config, http, slack, harvestAccount)
-      .generateStats(year, month, email);
+    const result = isAgileday
+      ? await application(config, http, slack, harvestAccount)
+        .generateAgiledayStats(year, month, email)
+      : await application(config, http, slack, harvestAccount)
+        .generateHarvestStats(year, month, email);
     logger.info('Stats generated');
 
     return slack.postMessage(userId, result);

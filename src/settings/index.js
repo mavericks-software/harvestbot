@@ -61,6 +61,18 @@ export default () => {
         productServiceDevelopment: parseInt(secretConfig.taskIds.productServiceDevelopment, 10),
         internallyInvoicable: parseInt(secretConfig.taskIds.internallyInvoicable, 10),
       },
+      agiledayTaskNames: {
+        publicHoliday: secretConfig.agiledayTaskNames.publicHoliday,
+        vacation: secretConfig.agiledayTaskNames.vacation,
+        unpaidLeave: secretConfig.agiledayTaskNames.unpaidLeave,
+        parentalLeave: secretConfig.agiledayTaskNames.parentalLeave,
+        sickLeave: secretConfig.agiledayTaskNames.sickLeave,
+        sickLeaveChildsSickness: secretConfig.agiledayTaskNames.sickLeaveChildsSickness,
+        flexLeave: secretConfig.agiledayTaskNames.flexLeave,
+        extraPaidLeave: secretConfig.agiledayTaskNames.extraPaidLeave,
+        productServiceDevelopment: secretConfig.agiledayTaskNames.productServiceDevelopment,
+        internallyInvoicable: secretConfig.agiledayTaskNames.internallyInvoicable,
+      },
       currentTime: new Date().getTime() / 1000,
     };
   };
