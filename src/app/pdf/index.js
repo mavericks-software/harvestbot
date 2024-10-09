@@ -42,7 +42,7 @@ export default function writeBillingReport(
     styles: { fontSize: 16 },
     columnStyles: { 1: { halign: 'right' } },
     body: [
-      ['Detailed time report', 'Mavericks'],
+      ['Detailed time report', 'Witted'],
     ],
   });
 
