@@ -71,7 +71,8 @@ Harvestbot functionality can be triggered from local machine using CLI-interface
 * [nvm](https://github.com/creationix/nvm) (or install and activate Node version required in file ./nvmrc)
 * [direnv](https://github.com/direnv/direnv) (or manage environment variables as you prefer)
 * You need an existing [Google Cloud](https://console.cloud.google.com/) project to run the code.
-* [Download key](https://cloud.google.com/docs/authentication/getting-started) in JSON format from cloud console to be able to acccess your project.
+* [Download key](https://cloud.google.com/iam/docs/keys-create-delete#iam-service-account-keys-create-console) in JSON format from cloud console to be able to acccess your project.
+  * Create the key for the account that has an email that ends in @appspot.gserviceaccount.com.
 * Export relevant Google Cloud configuration variables:
 
 ```
@@ -81,8 +82,8 @@ Harvestbot functionality can be triggered from local machine using CLI-interface
 export GCLOUD_PROJECT=XXX
 
 # Google cloud region for cloud functions
-export GCLOUD_FUNCTION_REGION=XXX
-export FUNCTION_REGION=XXX
+export GCLOUD_FUNCTION_REGION=europe-west3
+export FUNCTION_REGION=europe-west3
 
 # Path to JSON file you created in Google Cloud console
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/file.json
@@ -142,6 +143,8 @@ export ADMINS=abc123,321cba
 # Multiple Harvest accounts as comma separated key values
 export HARVEST_ACCESS_TOKENS=company1:abc123,company2:321cba
 export HARVEST_ACCOUNT_IDS=company1:1234,company2:4321
+
+export MISSING_WORKHOURS_REPORT_EMAIL=person@mail.com
 ```
 
 ### Running locally
@@ -265,18 +268,10 @@ The authenticated user should have permissions (at minimum):
 * Cloud Functions Developer
 * Service Account User
 
-```
-echo "Set project"
-gcloud --quiet config set project $GCLOUD_PROJECT
+If you want to deploy individual functions, copy the row from the file below, and run just the row.
 
-echo "Deploy functions"
-gcloud functions deploy initFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --trigger-http
-gcloud functions deploy calcFlextime --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --timeout 540 --trigger-topic flextime
-gcloud functions deploy calcStats --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --timeout 540 --trigger-topic stats
-gcloud functions deploy calcBillingReports --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --timeout 540 --trigger-topic reports
-gcloud functions deploy calcWorkingHours --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --timeout 540 --trigger-topic workinghours
-gcloud functions deploy sendReminders --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --timeout 540 --trigger-http
-gcloud functions deploy notifyUsers --set-env-vars GCLOUD_PROJECT=$GCLOUD_PROJECT,FUNCTION_REGION=$FUNCTION_REGION --region=$FUNCTION_REGION --format=none --runtime=nodejs16 --trigger-http
+```
+./tools/deploy.sh
 ```
 
 When the deployment is done, copy the URL for initFlextime-function (from Google Cloud Console) and paste it to Slack slash command configuration. The format should be something like https://REGION-PROJECT_ID.cloudfunctions.net/initFlextime. Test out the command from Slack and see from Google Cloud Console logs what went wrong :)

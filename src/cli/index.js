@@ -22,25 +22,34 @@ export default (config, http) => {
     }
   };
 
-  const generateStats = async (email, year, month) => {
+  const generateStats = async (email, year, month, account) => {
     logger.info(`Generating stats for ${year}-${month}`);
-    await application(config, http, slack).generateStats(year, month, email);
+    const harvestAccount = account && account.match(/^(witted|mavericks)$/g) ? account : 'mavericks';
+    await application(config, http, slack, harvestAccount).generateStats(year, month, email);
     logger.info(`Sent stats report to ${email}`);
   };
 
-  const generateBillingReports = async (email, year, month, lastNames, opts) => {
-    logger.info(`Generating billing reports for ${year}-${month}`);
-
-    const { harvest } = opts;
-    const harvestAccount = harvest && harvest.match(/^(witted|mavericks)$/g) ? harvest : 'mavericks';
-    await application(config, http, slack, harvestAccount)
-      .generateBillingReports(year, month, lastNames, email);
+  const generateBillingReports = async (email, year, month, lastNamesAndAccount) => {
+    const account = lastNamesAndAccount[lastNamesAndAccount.length - 1];
+    const harvestAccount = account && account.match(/^(witted|mavericks)$/g) ? account : 'mavericks';
+    // TODO: clean up implementation when switch to Agileday is done.
+    if (account === 'agileday') {
+      logger.info(`Generating Agileday billing reports for ${year}-${month}`);
+      await application(config, http, slack, harvestAccount)
+        .generateAgiledayBillingReports(year, month, lastNamesAndAccount, email);
+    } else {
+      logger.info(`Generating billing reports for ${year}-${month} harvest account ${account}`);
+      await application(config, http, slack, harvestAccount)
+        .generateHarvestBillingReports(year, month, lastNamesAndAccount, email);
+    }
     logger.info(`Sent billing reports to ${email}`);
   };
 
-  const generateWorkingHoursReport = async (email, year, month, range) => {
+  const generateWorkingHoursReport = async (email, year, month, range, account) => {
+    const harvestAccount = account && account.match(/^(witted|mavericks)$/g) ? account : 'mavericks';
     logger.info(`Generating working hours report, range ${range} months from ${year}-${month}`);
-    await application(config, http, slack).generateWorkingHoursReport(year, month, range, email);
+    await application(config, http, slack, harvestAccount)
+      .generateWorkingHoursReport(year, month, range, email);
     logger.info(`Sent working hours report to ${email}`);
   };
 
@@ -49,10 +58,19 @@ export default (config, http) => {
     await application(config, http, slack).sendMonthlyReminders(year, month, email, false);
   };
 
-  const calcFlexTime = async (email, harvestAccount = 'mavericks') => {
-    logger.info(`Calculating flextime for ${email}`);
-    const data = await application(config, http, slack, harvestAccount).calcFlextime(email);
-    printResponse(data.header, data.messages);
+  const generateFlexTime = async (email, account) => {
+    const harvestAccount = account && account.match(/^(witted|mavericks)$/g) ? account : 'mavericks';
+    if (account === 'agileday') {
+      logger.info(`Calculating agileday flextime for ${email}`);
+      const data = await application(config, http, slack, harvestAccount)
+        .generateAgiledayFlextime(email);
+      printResponse(data.header, data.messages);
+    } else {
+      logger.info(`Calculating flextime for ${email} for Harvest account ${harvestAccount}`);
+      const data = await application(config, http, slack, harvestAccount)
+        .generateHarvestFlextime(email);
+      printResponse(data.header, data.messages);
+    }
   };
 
   const encryptConfiguration = async () => {
@@ -68,6 +86,7 @@ export default (config, http) => {
     console.log(`export HARVEST_ACCOUNT_ID=${conf.harvestAccountId}`);
     console.log(`export HARVEST_ACCESS_TOKENS=${conf.harvestAccessTokens}`);
     console.log(`export HARVEST_ACCOUNT_IDS=${conf.harvestAccountIds}`);
+    console.log(`export AGILEDAY_ACCESS_TOKEN=${conf.agiledayAccessToken}`);
     console.log(`export SLACK_BOT_TOKEN=${conf.slackBotToken}`);
     console.log(`export SLACK_SIGNING_SECRET=${conf.slackSigningSecret}`);
     console.log(`export SLACK_NOTIFY_CHANNEL_ID=${conf.notifyChannelId}`);
@@ -89,7 +108,7 @@ export default (config, http) => {
   };
 
   const generateMissingHoursReport = async (harvestAccount = 'mavericks') => {
-    logger.info(`Generating missing workhours report for harvest account ${harvestAccount}`);
+    logger.info(`Generating missing workhours report for Harvest account ${harvestAccount}`);
     await application(config, http, slack, harvestAccount)
       .generateMissingWorkHoursReport(config.missingWorkhoursReportEmail);
     logger.info(`Sent missing workhours report for harvest account ${harvestAccount}`);
@@ -103,18 +122,17 @@ export default (config, http) => {
       .description('Send monthly statistics to given email address.')
       .action(generateStats);
     program
-      .command('report <email> <year> <month> <lastname...>')
-      .option('-a, --harvest <harvestAccount>', 'Harvest account')
+      .command('report <email> <year> <month> <lastNameAndAccount...>')
       .description('Send monthly reports to given email address for the listed users.')
       .action(generateBillingReports);
     program
-      .command('hours <email> <year> <month> <range> [harvestAccount]')
+      .command('hours <email> <year> <month> <range> [account]')
       .description('Send working hours report to given email address.')
       .action(generateWorkingHoursReport);
     program
-      .command('flextime <email> [harvestAccount]')
+      .command('flextime <email> [account]')
       .description('Calculate flex saldo for given user.')
-      .action(calcFlexTime);
+      .action(generateFlexTime);
     program
       .command('remind <email> <year> <month> [harvestAccount]')
       .description('Send monthly reminder for given user.')
