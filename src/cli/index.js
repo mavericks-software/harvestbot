@@ -60,17 +60,9 @@ export default (config, http) => {
 
   const generateFlexTime = async (email, account) => {
     const harvestAccount = account && account.match(/^(witted|mavericks)$/g) ? account : 'mavericks';
-    if (account === 'agileday') {
-      logger.info(`Calculating agileday flextime for ${email}`);
-      const data = await application(config, http, slack, harvestAccount)
-        .generateAgiledayFlextime(email);
-      printResponse(data.header, data.messages);
-    } else {
-      logger.info(`Calculating flextime for ${email} for Harvest account ${harvestAccount}`);
-      const data = await application(config, http, slack, harvestAccount)
-        .generateHarvestFlextime(email);
-      printResponse(data.header, data.messages);
-    }
+    logger.info(`Calculating flextime for ${email} for Harvest account ${harvestAccount}`);
+    const data = await application(config, http, slack, harvestAccount).generateFlextime(email);
+    printResponse(data.header, data.messages);
   };
 
   const encryptConfiguration = async () => {
@@ -130,7 +122,7 @@ export default (config, http) => {
       .description('Send working hours report to given email address.')
       .action(generateWorkingHoursReport);
     program
-      .command('flextime <email> [account]')
+      .command('flextime <email> [harvestAccount]')
       .description('Calculate flex saldo for given user.')
       .action(generateFlexTime);
     program

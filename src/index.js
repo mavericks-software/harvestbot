@@ -43,8 +43,7 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
   - send working hours report. \n
   - supports agileday as an account (soon) \n
 /flextime [account] \n
-  - calculate flex saldo \n
-  - supports agileday as an account (soon) \n`,
+  - calculate flex saldo \n`,
       });
     }
 
@@ -108,16 +107,6 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
               isAgileday,
             });
           return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
-        case 'agileday':
-          // TODO: clean up implementation when switch to Agileday is done.
-          logger.info('Enqueuing flex time request');
-          await queue(config)
-            .enqueueFlexTimeRequest({
-              userId: req.body.user_id,
-              responseUrl: req.body.response_url,
-              isAgileday: true,
-            });
-          return res.json({ text: 'Starting to calculate flextime. This may take a while... Join channel #harvest for weekly notifications.' });
         default:
           logger.warn('Received unknown command');
           return res.status(401).send('Unknown command');
@@ -142,7 +131,7 @@ export const calcFlextime = async (message) => {
   const config = await getAppConfig();
   const request = JSON.parse(Buffer.from(message.data, 'base64').toString());
   const slack = slackApi(config, http, request.responseUrl);
-  const { userId, harvestAccount, isAgileday } = request;
+  const { userId, harvestAccount } = request;
 
   if (userId) {
     logger.info(`Fetching data for user id ${userId}`);
@@ -156,9 +145,7 @@ export const calcFlextime = async (message) => {
     await db(config).storeUserData(userId, email);
     logger.info('User data stored');
 
-    const data = isAgileday
-      ? await application(config, http, harvestAccount).generateAgiledayFlextime(email)
-      : await application(config, http, harvestAccount).generateHarvestFlextime(email);
+    const data = await application(config, http, harvestAccount).generateFlextime(email);
     logger.info('Flextime calculated');
 
     return slack.postMessage(userId, data.header, data.messages);
