@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { catchError } from 'rxjs/operators';
 import log from '../../log';
 
 export const agiledaySortRawTimeEntriesByUser = (
@@ -20,6 +21,9 @@ export const agiledaySortRawTimeEntriesByUser = (
       billable: entry.billable,
       projectId: entry.projectId,
       projectName: entry.projectName,
+      employeeCompany: entry.employeeCompany,
+      taskHourlyPrice: entry.taskHourlyPrice,
+      openingHourlyPrice: entry.openingHourlyPrice,
       taskId: entry.projectTask.toLowerCase(),
       taskName: entry.projectTask,
       notes: entry.note,
@@ -27,7 +31,21 @@ export const agiledaySortRawTimeEntriesByUser = (
   return timeEntries.reduce((result, entries, index) => {
     const user = sortedUsers[index];
     return entries.length > 0
-      ? [...result, { user, entries }]
+      ? [
+        ...result,
+        {
+          // Used for sorting in stats
+          companyName: entries[0].employeeCompany,
+          user: {
+            ...user,
+            // TODO: first_name & last_name is for compatibility
+            // with harvest data for PDF etc creation,
+            // clean up after harvest implementation is removed.
+            first_name: user.firstName,
+            last_name: user.lastName,
+          },
+          entries,
+        }]
       : result;
   },
   []);
@@ -47,6 +65,26 @@ export const agiledaySortMonthlyUserEntriesByProjectAndTask = (entries) => entri
     return result;
   }, {});
 
+export const agiledayGenerateMonthlyHoursStats = async (
+  calendar,
+  analyzer,
+  entriesByCompany,
+  year,
+  month,
+) => {
+  const workDaysInMonth = calendar.getWorkingDaysTotalForMonth(year, month);
+
+  return Object.keys(entriesByCompany).reduce((result, key) => {
+    const entries = entriesByCompany[key];
+    return [
+      ...result,
+      {},
+      { name: key },
+      ...entries.map((userData) => analyzer.getHoursStats(userData, workDaysInMonth)),
+    ];
+  }, [{ name: 'CALENDAR DAYS', days: workDaysInMonth }]);
+};
+
 export default (config, http) => {
   const logger = log(config);
 
@@ -65,7 +103,9 @@ export default (config, http) => {
     ...args
   ) => func(...args).toPromise();
 
-  const getMonthlyRangeQueryString = (year, month) => `&startDate=${DateTime.local(year, month, 1).toISODate()}&endDate=${DateTime.local(year, month, 1).endOf('month').toISODate()}`;
+  // NOTE: agileday doesn't return values for the endDate, so we need to add one day to it.
+  // The endDate is "non-inclusive".
+  const getMonthlyRangeQueryString = (year, month) => `&startDate=${DateTime.local(year, month, 1).toISODate()}&endDate=${DateTime.local(year, month, 1).endOf('month').plus({ days: 1 }).toISODate()}`;
 
   const getAllUsers = () => {
     const url = '/employee';
@@ -74,7 +114,15 @@ export default (config, http) => {
 
   const getMonthlyTimeEntries = (year, month) => {
     const url = `/time_reporting?${getMonthlyRangeQueryString(year, month)}&status=submitted`;
-    return api.getJson(url);
+    return api.getJson(url)
+      .pipe(
+        catchError((e) => {
+          if (e.message.includes('status code 404')) {
+            return [];
+          }
+          throw e;
+        }),
+      );
   };
 
   return {

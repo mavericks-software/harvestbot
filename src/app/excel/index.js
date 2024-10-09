@@ -16,6 +16,9 @@ export default () => {
     ) => {
       const sheet = xlsx.utils.json_to_sheet(rows);
       headers.map((label, index) => {
+        if (!sheet[String.fromCharCode(CHAR_CODE_A + index) + 1]) {
+          sheet[String.fromCharCode(CHAR_CODE_A + index) + 1] = {};
+        }
         sheet[String.fromCharCode(CHAR_CODE_A + index) + 1].v = label;
         return true;
       });
