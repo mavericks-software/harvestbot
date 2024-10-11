@@ -36,9 +36,10 @@ export const initFlextime = async (req, res) => {
 Bot for calculating your hourly balance. Use /flextime to start calculation. Usage: \n
 /flextime stats <year> <month> [account] \n
   - send monthly reports for the listed users. \n
+  - supports agileday as an account \n
 /flextime report <year> <month> [account] \n
   - send monthly reports for the listed users. \n
-  - supports agileday as an account (soon) \n
+  - supports agileday as an account \n
 /flextime hours <email> <year> <month> <range> [account] \n
   - send working hours report. \n
   - supports agileday as an account (soon) \n
