@@ -15,27 +15,21 @@
   "admins": "ADMINS",
   "missingWorkhoursReportEmail": "MISSING_WORKHOURS_REPORT_EMAIL",
   "taskIds": {
-    "publicHoliday": "TASK_ID_PUBLIC_HOLIDAY",
     "vacation": "TASK_ID_VACATION",
     "unpaidLeave": "TASK_ID_UNPAID_LEAVE",
     "parentalLeave": "TASK_ID_PARENTAL_LEAVE",
     "sickLeave": "TASK_ID_SICK_LEAVE",
     "sickLeaveChildsSickness": "TASK_ID_SICK_LEAVE_CHILDS_SICKNESS",
-    "flexLeave": "TASK_ID_FLEX_LEAVE",
     "extraPaidLeave": "TASK_ID_EXTRA_PAID_LEAVE",
-    "productServiceDevelopment": "TASK_ID_PRODUCT_SERVICE_DEVELOPMENT",
     "internallyInvoicable": "TASK_ID_INTERNALLY_INVOICABLE"
   },
   "agiledayTaskNames": {
-    "publicHoliday": "AD_TASK_NAME_PUBLIC_HOLIDAY",
     "vacation": "AD_TASK_NAME_VACATION",
     "unpaidLeave": "AD_TASK_NAME_UNPAID_LEAVE",
     "parentalLeave": "AD_TASK_NAME_PARENTAL_LEAVE",
     "sickLeave": "AD_TASK_NAME_SICK_LEAVE",
     "sickLeaveChildsSickness": "AD_TASK_NAME_SICK_LEAVE_CHILDS_SICKNESS",
-    "flexLeave": "AD_TASK_NAME_FLEX_LEAVE",
     "extraPaidLeave": "AD_TASK_NAME_EXTRA_PAID_LEAVE",
-    "productServiceDevelopment": "AD_TASK_NAME_PRODUCT_SERVICE_DEVELOPMENT",
     "internallyInvoicable": "AD_TASK_NAME_INTERNALLY_INVOICABLE"
   }
 }

@@ -8,7 +8,6 @@ export const DEFAULT_HOURS_STATS_COLUMN_HEADERS = [
   'Billable%',
   'Plus / minus',
   'Internally invoicable, hours',
-  'Product/service development, hours',
   'Sick leave, hours',
   'Sick leave - child\'s sickness, hours',
   'Paid vacation, days',
