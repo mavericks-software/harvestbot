@@ -73,6 +73,7 @@ Harvestbot functionality can be triggered from local machine using CLI-interface
 * You need an existing [Google Cloud](https://console.cloud.google.com/) project to run the code.
 * [Download key](https://cloud.google.com/iam/docs/keys-create-delete#iam-service-account-keys-create-console) in JSON format from cloud console to be able to acccess your project.
   * Create the key for the account that has an email that ends in @appspot.gserviceaccount.com.
+* Copy .envrc.example > .envrc
 * Export relevant Google Cloud configuration variables:
 
 ```
@@ -96,50 +97,9 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/file.json
   * Create API token for your Harvest account in [Harvest developer view](https://id.getharvest.com/developers). Your Harvest user needs to have admin-level rights to be able to access all features.
   * Create API key for [SendGrid](https://sendgrid.com/)-service.
   * Fetch company task information with [API request](https://help.getharvest.com/api-v2/tasks-api/tasks/tasks/). You need the task ids for configuring flextime calculation correctly.
-* Define following environment variables:
-
-```
-# .envrc
-
-...
-
-# Access token you fetched from Harvest developer UI
-export HARVEST_ACCESS_TOKEN=XXX
-
-# Harvest account ID you fetched from Harvest developer UI
-export HARVEST_ACCOUNT_ID=XXX
-
-# Key you fetched from SendGrid
-export SENDGRID_API_KEY=XXX
-
-# Allowed email domains for users
-export ALLOWED_EMAIL_DOMAINS=newthings.co,newthin.gs
-
-# Harvest company account specific configurations
-# Task id for vacation time
-export TASK_ID_VACATION=124
-# Task id for unpaid leave
-export TASK_ID_UNPAID_LEAVE=125
-# Task id for sick leave
-export TASK_ID_SICK_LEAVE=126
-# Task if for sick leave - child's sickness)
-export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=18406328
-# Task id for parental leave
-export TASK_ID_PARENTAL_LEAVE=18450208
-# Task id for extra paid leave
-export TASK_ID_EXTRA_PAID_LEAVE=13538291
-# Task id for internally invoicable
-export TASK_ID_INTERNALLY_INVOICABLE=14655092
-
-# Comma separate string of Admins slack ids
-export ADMINS=abc123,321cba
-
-# Multiple Harvest accounts as comma separated key values
-export HARVEST_ACCESS_TOKENS=company1:abc123,company2:321cba
-export HARVEST_ACCOUNT_IDS=company1:1234,company2:4321
-
-export MISSING_WORKHOURS_REPORT_EMAIL=person@mail.com
-```
+* Fill in rest of the needed env variables in .envrc using the decrypt command output
+  * NOTE: column headers values are currently empty, using defaults from settings/defaults
+  * NOTE: some values not needing security are already filled for convenience, but double check them when doing this the first time
 
 ### Running locally
 
