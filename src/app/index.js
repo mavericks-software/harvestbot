@@ -12,7 +12,11 @@ import harvest, {
 } from './harvest';
 import emailer from './emailer';
 import writeBillingReport from './pdf';
-import agileday, { agiledaySortMonthlyUserEntriesByProjectAndTask, agiledaySortRawTimeEntriesByUser } from './agileday';
+import agileday, {
+  agiledayGenerateMonthlyHoursStats,
+  agiledaySortMonthlyUserEntriesByProjectAndTask,
+  agiledaySortRawTimeEntriesByUser,
+} from './agileday';
 
 export default (config, http, slack, harvestAccount = 'mavericks') => {
   const logger = log(config);
@@ -24,7 +28,6 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
   );
   const validateEmail = (email, emailParts = email.split('@')) => (config.emailDomains.includes(emailParts[1]) ? emailParts[0] : null);
 
-  const analyzer = analyze(config);
   const calendar = cal();
 
   const harvestTracker = harvest(config, http, harvestAccount);
@@ -44,6 +47,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
   };
 
   const generateFlextime = async (email) => {
+    const analyzer = analyze(config);
     const userName = validateEmail(email);
     if (!userName) {
       return { header: `Invalid email domain for ${email}` };
@@ -86,13 +90,14 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     return { header, messages };
   };
 
-  const generateStats = async (
+  const generateHarvestStats = async (
     yearArg,
     monthArg,
     email,
     year = parseInt(yearArg, 10),
     month = parseInt(monthArg, 10),
   ) => {
+    const analyzer = analyze(config);
     const validEmail = validateEmail(email);
     if (!validEmail) {
       return `Invalid email domain for ${email}`;
@@ -119,8 +124,8 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     });
 
     const monthlyHoursRows = await harvestGenerateMonthlyHoursStats(
-      analyzer,
       calendar,
+      analyzer,
       entriesByType.invoicable,
       entriesByType.nonInvoicable,
       entriesByType.contractors,
@@ -151,6 +156,74 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     );
     logger.info(`Sending stats to ${email}`);
     await emailer(config).sendEmail(email, 'Monthly harvest stats', `${year}-${month}`, [filePath]);
+    unlinkSync(filePath);
+    return `Stats sent to email ${email}.`;
+  };
+
+  const generateAgiledayStats = async (
+    yearArg,
+    monthArg,
+    email,
+    year = parseInt(yearArg, 10),
+    month = parseInt(monthArg, 10),
+  ) => {
+    const analyzer = analyze(config, 'agileday');
+    const validEmail = validateEmail(email);
+    if (!validEmail) {
+      return `Invalid email domain for ${email}`;
+    }
+
+    const users = (await agiledayTracker.getUsers());
+    const rawTimeEntries = await agiledayTracker.getMonthlyTimeEntries(year, month);
+    if (!rawTimeEntries || rawTimeEntries.length === 0) {
+      return 'No time entries found';
+    }
+
+    const allEntries = agiledaySortRawTimeEntriesByUser(rawTimeEntries, users);
+
+    const entriesByCompany = allEntries.reduce((result, entry) => {
+      if (entry.user.segment !== 'EMPLOYEE') return result;
+      if (!result[entry.companyName]) {
+        // eslint-disable-next-line no-param-reassign
+        result[entry.companyName] = [];
+      }
+      result[entry.companyName].push(entry);
+      return result;
+    },
+    {});
+
+    const monthlyHoursRows = await agiledayGenerateMonthlyHoursStats(
+      calendar,
+      analyzer,
+      entriesByCompany,
+      year,
+      month,
+    );
+
+    // NOTE: agileday implementation uses entry data for hourly task rate,
+    // instead of separate task rates.
+    const monthlyBillingRows = analyzer.getBillableStats(allEntries, {});
+
+    const fileName = `${year}-${month}-hours-${new Date().getTime()}.xlsx`;
+    const filePath = `${tmpdir()}/${fileName}`;
+    logger.info(`Writing stats to ${filePath}`);
+    excel().writeWorkbook(
+      filePath,
+      [{
+        rows: monthlyHoursRows,
+        title: `${year}-${month}-hours`,
+        headers: config.hoursStatsColumnHeaders,
+        columns: [{ index: 0, width: 20 }, { index: 5, width: 20 }],
+      },
+      {
+        rows: monthlyBillingRows,
+        title: `${year}-${month}-billable`,
+        headers: config.billableStatsColumnHeaders,
+        columns: [{ index: 0, width: 20 }, { index: 1, width: 20 }, { index: 3, width: 20 }],
+      }],
+    );
+    logger.info(`Sending stats to ${email}`);
+    await emailer(config).sendEmail(email, 'Monthly agileday stats', `${year}-${month}`, [filePath]);
     unlinkSync(filePath);
     return `Stats sent to email ${email}.`;
   };
@@ -217,11 +290,19 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     const selectedUsers = users.filter((user) => lastNames.includes(user.lastName.toLowerCase()));
 
     const rawTimeEntries = await agiledayTracker.getMonthlyTimeEntries(year, month);
-    const entries = (await agiledaySortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false))
+    if (!rawTimeEntries || rawTimeEntries.length === 0) {
+      return 'No time entries found';
+    }
+
+    const entries = (agiledaySortRawTimeEntriesByUser(rawTimeEntries, selectedUsers, false))
       .map((monthlyEntries) => ({
         user: monthlyEntries.user,
         entries: agiledaySortMonthlyUserEntriesByProjectAndTask(monthlyEntries.entries),
       }));
+    if (!entries || entries.length === 0) {
+      return 'No time entries found';
+    }
+
     const reportPaths = [];
     entries.forEach((userEntries) => {
       Object.keys(userEntries.entries).forEach((projectId) => {
@@ -246,6 +327,7 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
     rangeArg,
     email,
   ) => {
+    const analyzer = analyze(config);
     const range = rangeArg ? parseInt(rangeArg, 10) : 6;
     if (range < 1 || range > 12) {
       return 'Invalid range';
@@ -428,7 +510,8 @@ export default (config, http, slack, harvestAccount = 'mavericks') => {
 
   return {
     generateFlextime,
-    generateStats,
+    generateHarvestStats,
+    generateAgiledayStats,
     generateHarvestBillingReports,
     generateAgiledayBillingReports,
     generateWorkingHoursReport,

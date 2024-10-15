@@ -50,16 +50,22 @@ export default () => {
         ? secretConfig.workingHoursReportHeaders.split(',')
         : DEFAULT_WORKING_HOURS_REPORT_COLUMN_HEADERS,
       taskIds: {
-        publicHoliday: parseInt(secretConfig.taskIds.publicHoliday, 10),
         vacation: parseInt(secretConfig.taskIds.vacation, 10),
         unpaidLeave: parseInt(secretConfig.taskIds.unpaidLeave, 10),
         parentalLeave: parseInt(secretConfig.taskIds.parentalLeave, 10),
         sickLeave: parseInt(secretConfig.taskIds.sickLeave, 10),
         sickLeaveChildsSickness: parseInt(secretConfig.taskIds.sickLeaveChildsSickness, 10),
-        flexLeave: parseInt(secretConfig.taskIds.flexLeave, 10),
         extraPaidLeave: parseInt(secretConfig.taskIds.extraPaidLeave, 10),
-        productServiceDevelopment: parseInt(secretConfig.taskIds.productServiceDevelopment, 10),
         internallyInvoicable: parseInt(secretConfig.taskIds.internallyInvoicable, 10),
+      },
+      agiledayTaskNames: {
+        vacation: secretConfig.agiledayTaskNames.vacation,
+        unpaidLeave: secretConfig.agiledayTaskNames.unpaidLeave,
+        parentalLeave: secretConfig.agiledayTaskNames.parentalLeave,
+        sickLeave: secretConfig.agiledayTaskNames.sickLeave,
+        sickLeaveChildsSickness: secretConfig.agiledayTaskNames.sickLeaveChildsSickness,
+        extraPaidLeave: secretConfig.agiledayTaskNames.extraPaidLeave,
+        internallyInvoicable: secretConfig.agiledayTaskNames.internallyInvoicable,
       },
       currentTime: new Date().getTime() / 1000,
     };

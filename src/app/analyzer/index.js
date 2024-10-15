@@ -1,24 +1,18 @@
 import moment from 'moment';
 import cal from '../calendar';
 
-export default ({ taskIds }) => {
+export default ({ taskIds, agiledayTaskNames }, trackerType = 'harvest') => {
   const calendar = cal();
   const sortByDate = (a, b) => new Date(a.date) - new Date(b.date);
 
-  const isPublicHoliday = (taskId) => taskId === taskIds.publicHoliday;
-  const isPaidVacation = (taskId) => taskId === taskIds.vacation;
-  const isUnpaidLeave = (taskId) => taskId === taskIds.unpaidLeave;
-  const isParentalLeave = (taskId) => taskId === taskIds.parentalLeave;
-  const isFlexLeave = (taskId) => taskId === taskIds.flexLeave;
-  const isExtraPaidLeave = (taskId) => taskId === taskIds.extraPaidLeave;
-  const isSickLeave = (taskId) => taskId === taskIds.sickLeave;
-  const isChildsSickness = (taskId) => taskId === taskIds.sickLeaveChildsSickness;
-  const isProductServiceDevelopment = (taskId) => taskId === taskIds.productServiceDevelopment;
-  const isInternallyInvoicable = (taskId) => taskId === taskIds.internallyInvoicable;
-  const isHoliday = (taskId) => isPublicHoliday(taskId)
-    || isPaidVacation(taskId)
-    || isUnpaidLeave(taskId);
-  const isHolidayOrFlex = (taskId) => isHoliday(taskId) || isFlexLeave(taskId);
+  const isPaidVacation = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.vacation : taskId === agiledayTaskNames.vacation);
+  const isUnpaidLeave = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.unpaidLeave : taskId === agiledayTaskNames.unpaidLeave);
+  const isParentalLeave = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.parentalLeave : taskId === agiledayTaskNames.parentalLeave);
+  const isExtraPaidLeave = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.extraPaidLeave : taskId === agiledayTaskNames.extraPaidLeave);
+  const isSickLeave = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.sickLeave : taskId === agiledayTaskNames.sickLeave);
+  const isChildsSickness = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.sickLeaveChildsSickness : taskId === agiledayTaskNames.sickLeaveChildsSickness);
+  const isInternallyInvoicable = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.internallyInvoicable : taskId === agiledayTaskNames.internallyInvoicable);
+  const isAway = (taskId) => isPaidVacation(taskId) || isUnpaidLeave(taskId);
   const countsTowardsTotalWorkHours = (taskId) => !isPaidVacation(taskId)
     && !isUnpaidLeave(taskId)
     && !isExtraPaidLeave(taskId)
@@ -55,13 +49,11 @@ export default ({ taskIds }) => {
     entries,
     filtered = entries.reduce((result, entry) => {
       const entryDate = new Date(entry.date);
-      const ignoredTask = isPublicHoliday(entry.taskId) || isFlexLeave(entry.taskId);
-      const ignoreFromTotal = ignoredTask;
-      const isCurrentMonthEntry = !ignoreFromTotal && isCurrentMonth(entryDate);
+      const isCurrentMonthEntry = isCurrentMonth(entryDate);
 
       return {
         ...result,
-        total: ignoredTask ? result.total : result.total + entry.hours,
+        total: result.total + entry.hours,
         billable: isCurrentMonthEntry && entry.billable
           ? result.billable + entry.hours
           : result.billable,
@@ -101,7 +93,7 @@ export default ({ taskIds }) => {
     return {
       dates: [...dates, entry.date],
       daysCount: {
-        working: isHoliday(entry.taskId) ? working : working + 1,
+        working: !isAway(entry.taskId) ? working + 1 : working,
         vacation: isPaidVacation(entry.taskId) ? vacation + 1 : vacation,
         unpaidLeave: isUnpaidLeave(entry.taskId) ? unpaidLeave + 1 : unpaidLeave,
         parentalLeave: isParentalLeave(entry.taskId) ? parentalLeave + 1 : parentalLeave,
@@ -110,14 +102,10 @@ export default ({ taskIds }) => {
     };
   };
 
-  const getDayInfo = (
-    entry,
-    isCalendarWorkingDay = calendar.isWorkingDay(new Date(entry.date)),
-    isWorkingOrSickDay = !isHolidayOrFlex(entry.taskId),
-  ) => ({
-    isCalendarWorkingDay,
-    isWorkingOrSickDay,
-    isBillable: isWorkingOrSickDay && entry.billable,
+  const getDayInfo = (entry) => ({
+    isCalendarWorkingDay: calendar.isWorkingDay(new Date(entry.date)),
+    isWorkingOrSickDay: !isAway(entry.taskId),
+    isBillable: !isAway(entry.taskId) && entry.billable,
   });
 
   /* eslint-disable no-param-reassign */
@@ -168,9 +156,6 @@ export default ({ taskIds }) => {
           childsSicknessHours: isChildsSickness(entry.taskId)
             ? result.childsSicknessHours + entry.hours
             : result.childsSicknessHours,
-          productServiceDevelopmentHours: isProductServiceDevelopment(entry.taskId)
-            ? result.productServiceDevelopmentHours + entry.hours
-            : result.productServiceDevelopmentHours,
           internallyInvoicableHours: isInternallyInvoicable(entry.taskId)
             ? result.internallyInvoicableHours + entry.hours
             : result.internallyInvoicableHours,
@@ -193,7 +178,6 @@ export default ({ taskIds }) => {
         billableHours: 0,
         sickLeaveHours: 0,
         childsSicknessHours: 0,
-        productServiceDevelopmentHours: 0,
         internallyInvoicableHours: 0,
         projectNames: [],
       },
@@ -206,10 +190,10 @@ export default ({ taskIds }) => {
     hours: recordedHours.hours,
     billableHours: recordedHours.billableHours,
     projectName: recordedHours.projectNames.join(),
-    billablePercentage: (recordedHours.billableHours / recordedHours.hours) * 100,
+    billablePercentage: recordedHours.hours
+      ? (recordedHours.billableHours / recordedHours.hours) * 100 : 0,
     flexSaldo: recordedHours.hours - hoursPerCalendar,
     internallyInvoicableHours: recordedHours.internallyInvoicableHours,
-    productServiceDevelopmentHours: recordedHours.productServiceDevelopmentHours,
     sickLeaveHours: recordedHours.sickLeaveHours,
     childsSicknessHours: recordedHours.childsSicknessHours,
     vacationDays: recordedHours.daysCount.vacation,
@@ -271,6 +255,9 @@ export default ({ taskIds }) => {
       projectName,
       taskId,
       taskName,
+      // Prices only for agileady entries
+      taskHourlyPrice,
+      openingHourlyPrice,
       userId,
       hours,
       firstName,
@@ -289,7 +276,7 @@ export default ({ taskIds }) => {
           ...project.tasks,
           [taskId]: {
             ...task,
-            rate: (taskRates.find(
+            rate: (trackerType !== 'harvest') ? (taskHourlyPrice || openingHourlyPrice || 0) : (taskRates.find(
               ({
                 project: { id: pId },
                 task: { id: tId },
@@ -376,6 +363,7 @@ export default ({ taskIds }) => {
 
   const getBillableStats = (entries, taskRates) => {
     const sortedEntries = flattenBillableUserEntries(entries)
+      // NOTE: agileday implementation uses entry data instead of separate task rates.
       .reduce((result, row) => addBillableEntry(result, taskRates, row), {});
     const billableStats = convertBillableProjectRows(sortedEntries);
     const sumData = billableStats
@@ -392,7 +380,7 @@ export default ({ taskIds }) => {
       {
         billableTotal: sumData.total,
         billableHours: sumData.hours,
-        billableAvg: sumData.total / sumData.hours,
+        billableAvg: sumData.hours ? sumData.total / sumData.hours : 0,
       },
     ].map(({
       projectTotal, billableTotal, taskTotal, total,

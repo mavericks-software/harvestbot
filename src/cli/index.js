@@ -25,8 +25,18 @@ export default (config, http) => {
   const generateStats = async (email, year, month, account) => {
     logger.info(`Generating stats for ${year}-${month}`);
     const harvestAccount = account && account.match(/^(witted|mavericks)$/g) ? account : 'mavericks';
-    await application(config, http, slack, harvestAccount).generateStats(year, month, email);
-    logger.info(`Sent stats report to ${email}`);
+    // TODO: clean up implementation when switch to Agileday is done.
+    if (account === 'agileday') {
+      logger.info(`Sending agileday stats report to ${email}`);
+      const retval = await application(config, http, slack, harvestAccount)
+        .generateAgiledayStats(year, month, email);
+      logger.info(retval);
+    } else {
+      logger.info(`Sending stats report to ${email} for harvest account ${harvestAccount}`);
+      const retval = await application(config, http, slack, harvestAccount)
+        .generateHarvestStats(year, month, email);
+      logger.info(retval);
+    }
   };
 
   const generateBillingReports = async (email, year, month, lastNamesAndAccount) => {
@@ -35,14 +45,15 @@ export default (config, http) => {
     // TODO: clean up implementation when switch to Agileday is done.
     if (account === 'agileday') {
       logger.info(`Generating Agileday billing reports for ${year}-${month}`);
-      await application(config, http, slack, harvestAccount)
+      const retval = await application(config, http, slack, harvestAccount)
         .generateAgiledayBillingReports(year, month, lastNamesAndAccount, email);
+      logger.info(retval);
     } else {
-      logger.info(`Generating billing reports for ${year}-${month} harvest account ${account}`);
-      await application(config, http, slack, harvestAccount)
+      logger.info(`Generating billing reports for ${year}-${month} for harvest account ${harvestAccount}`);
+      const retval = await application(config, http, slack, harvestAccount)
         .generateHarvestBillingReports(year, month, lastNamesAndAccount, email);
+      logger.info(retval);
     }
-    logger.info(`Sent billing reports to ${email}`);
   };
 
   const generateWorkingHoursReport = async (email, year, month, range, account) => {
@@ -83,17 +94,22 @@ export default (config, http) => {
     console.log(`export SLACK_SIGNING_SECRET=${conf.slackSigningSecret}`);
     console.log(`export SLACK_NOTIFY_CHANNEL_ID=${conf.notifyChannelId}`);
     console.log(`export HOURS_STATS_COLUMN_HEADERS=${conf.hoursStatsColumnHeaders}`);
+    console.log(`export BILLABLE_STATS_COLUMN_HEADERS=${conf.billableStatsColumnHeaders}`);
     console.log(`export SENDGRID_API_KEY=${conf.sendGridApiKey}`);
-    console.log(`export TASK_ID_PUBLIC_HOLIDAY=${conf.taskIds.publicHoliday}`);
     console.log(`export TASK_ID_VACATION=${conf.taskIds.vacation}`);
     console.log(`export TASK_ID_UNPAID_LEAVE=${conf.taskIds.unpaidLeave}`);
     console.log(`export TASK_ID_SICK_LEAVE=${conf.taskIds.sickLeave}`);
     console.log(`export TASK_ID_SICK_LEAVE_CHILDS_SICKNESS=${conf.taskIds.sickLeaveChildsSickness}`);
     console.log(`export TASK_ID_PARENTAL_LEAVE=${conf.taskIds.parentalLeave}`);
-    console.log(`export TASK_ID_FLEX_LEAVE=${conf.taskIds.flexLeave}`);
     console.log(`export TASK_ID_EXTRA_PAID_LEAVE=${conf.taskIds.extraPaidLeave}`);
-    console.log(`export TASK_ID_PRODUCT_SERVICE_DEVELOPMENT=${conf.taskIds.productServiceDevelopment}`);
     console.log(`export TASK_ID_INTERNALLY_INVOICABLE=${conf.taskIds.internallyInvoicable}`);
+    console.log(`export AD_TASK_NAME_VACATION=${conf.agiledayTaskNames.vacation}`);
+    console.log(`export AD_TASK_NAME_UNPAID_LEAVE=${conf.agiledayTaskNames.unpaidLeave}`);
+    console.log(`export AD_TASK_NAME_SICK_LEAVE=${conf.agiledayTaskNames.sickLeave}`);
+    console.log(`export AD_TASK_NAME_SICK_LEAVE_CHILDS_SICKNESS=${conf.agiledayTaskNames.sickLeaveChildsSickness}`);
+    console.log(`export AD_TASK_NAME_PARENTAL_LEAVE=${conf.agiledayTaskNames.parentalLeave}`);
+    console.log(`export AD_TASK_NAME_EXTRA_PAID_LEAVE=${conf.agiledayTaskNames.extraPaidLeave}`);
+    console.log(`export AD_TASK_NAME_INTERNALLY_INVOICABLE=${conf.agiledayTaskNames.internallyInvoicable}`);
     console.log(`export ADMINS=${conf.admins}`);
     console.log(`export MISSING_WORKHOURS_REPORT_EMAIL=${conf.missingWorkhoursReportEmail}`);
     /* eslint-enable no-console */
