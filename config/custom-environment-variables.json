@@ -1,35 +1,8 @@
 {
-  "emailDomains": "ALLOWED_EMAIL_DOMAINS",
   "harvestAccessToken": "HARVEST_ACCESS_TOKEN",
-  "harvestAccountId": "HARVEST_ACCOUNT_ID",
   "harvestAccessTokens": "HARVEST_ACCESS_TOKENS",
-  "harvestAccountIds": "HARVEST_ACCOUNT_IDS",
   "agiledayAccessToken": "AGILEDAY_ACCESS_TOKEN",
   "slackBotToken": "SLACK_BOT_TOKEN",
   "slackSigningSecret": "SLACK_SIGNING_SECRET",
-  "notifyChannelId": "SLACK_NOTIFY_CHANNEL_ID",
-  "hoursStatsColumnHeaders": "HOURS_STATS_COLUMN_HEADERS",
-  "billableStatsColumnHeaders": "BILLABLE_STATS_COLUMN_HEADERS",
-  "workingHoursReportHeaders": "WORKING_HOURS_REPORT_COLUMN_HEADERS",
-  "sendGridApiKey": "SENDGRID_API_KEY",
-  "admins": "ADMINS",
-  "missingWorkhoursReportEmail": "MISSING_WORKHOURS_REPORT_EMAIL",
-  "taskIds": {
-    "vacation": "TASK_ID_VACATION",
-    "unpaidLeave": "TASK_ID_UNPAID_LEAVE",
-    "parentalLeave": "TASK_ID_PARENTAL_LEAVE",
-    "sickLeave": "TASK_ID_SICK_LEAVE",
-    "sickLeaveChildsSickness": "TASK_ID_SICK_LEAVE_CHILDS_SICKNESS",
-    "extraPaidLeave": "TASK_ID_EXTRA_PAID_LEAVE",
-    "internallyInvoicable": "TASK_ID_INTERNALLY_INVOICABLE"
-  },
-  "agiledayTaskNames": {
-    "vacation": "AD_TASK_NAME_VACATION",
-    "unpaidLeave": "AD_TASK_NAME_UNPAID_LEAVE",
-    "parentalLeave": "AD_TASK_NAME_PARENTAL_LEAVE",
-    "sickLeave": "AD_TASK_NAME_SICK_LEAVE",
-    "sickLeaveChildsSickness": "AD_TASK_NAME_SICK_LEAVE_CHILDS_SICKNESS",
-    "extraPaidLeave": "AD_TASK_NAME_EXTRA_PAID_LEAVE",
-    "internallyInvoicable": "AD_TASK_NAME_INTERNALLY_INVOICABLE"
-  }
+  "sendGridApiKey": "SENDGRID_API_KEY"
 }

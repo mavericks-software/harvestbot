@@ -119,7 +119,6 @@ export default (config, http) => {
 
   const getMonthlyTimeEntries = (year, month) => {
     const url = `/time_reporting?${getMonthlyRangeQueryString(year, month)}&status=submitted`;
-    console.log(url);
     return api.getJson(url)
       .pipe(
         catchError((e) => {

@@ -52,8 +52,7 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
 
     const cmdParts = cmd.split(' ');
     if (cmdParts.length > 0 && cmdParts[0].trim().length > 0) {
-      // Admin slack ids from secrets
-      const admins = config.admins ? config.admins.split(',') : [];
+      const { admins } = config;
 
       if (!admins.includes(req.body.user_id)) {
         logger.warn(`Received unauthorized stats request from user ${req.body.user_id}`);
