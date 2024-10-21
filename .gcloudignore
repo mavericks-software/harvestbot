@@ -15,8 +15,9 @@
 node_modules
 .envrc
 .DS_Store
-coverage/
-.terraform/
+coverage/*
+tools/*
+infra/*
 *.tfstate
 *.backup
 .idea

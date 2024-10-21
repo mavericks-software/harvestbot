@@ -1,0 +1,31 @@
+name: Deploy to GCP
+run-name: ${{ github.actor }} deploying from master
+on:
+  push:
+    branches: [ master ]
+env:
+  GCLOUD_PROJECT: 'harvestbot-406508'
+  FUNCTION_REGION: 'europe-west3'
+jobs:
+  Deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - uses: 'actions/checkout@v4'
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          workload_identity_provider: 'projects/162548303702/locations/global/workloadIdentityPools/github/providers/harvestbot'
+          service_account: 'harvestbot@harvestbot-406508.iam.gserviceaccount.com'
+          project_id: 'harvestbot-406508'
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+      #- name: 'Debug gcloud CLI'
+      #  run: 'gcloud info'
+      - name: 'Deploy a cloud function gen 2'
+        run: './tools/deploy.sh'

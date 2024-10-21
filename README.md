@@ -172,6 +172,13 @@ terraform init
 terraform apply
 ```
 
+### Set up Github Actions resources
+
+[Instructions](https://cloud.google.com/blog/products/identity-security/enabling-keyless-authentication-from-github-actions)
+
+- check `./tools/create_*` scripts for creating identity pool and provider for connecting github with GCP
+- use `./tools/github/get_*.sh` scripts to get values, if needed to change in `.gitlab/workflows/\*.yml`
+
 ### Integrate bot to Slack
 
 1. [Create new Slack App](https://api.slack.com/apps)
@@ -214,7 +221,11 @@ After you have successfully stored the configuration for the first time, you can
 
 Exporting the stored configuration to console output can be done using command "decrypt".
 
-### Cloud functions deployment
+### Cloud functions merge deployment
+
+* We use Github Actions to automatically deploy the functions when code is merged to master.
+
+### Cloud functions manual deployment
 
 The authenticated user should have permissions (at minimum):
 * Cloud Functions Developer
