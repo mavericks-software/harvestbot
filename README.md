@@ -52,11 +52,7 @@ The values in the report are calculated as follows:
    * Parental leave
 
 ***Please note*** that if new tasks that should ***not*** be included in the total working hours are added to Harvest, they must be
-* added to the encrypted app configuration as environment variables (```TASK_ID_...```, intructions for this can be found later in the README)
-* added to ```config/custom-environment-variables.json```
-* skipped in ```src/analyzer/index.js``` (```countsTowardsTotalWorkHours```)
-* updated to this README (the list above and the env variable instructions below)
-* added to ```src/cli/index.js``` (```decryptConfiguration```)
+* added to the src/settings/config.js as variables (```TASK_ID_...```)
 
 ### Monthly reminders
 
@@ -98,8 +94,10 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/file.json
   * Create API key for [SendGrid](https://sendgrid.com/)-service.
   * Fetch company task information with [API request](https://help.getharvest.com/api-v2/tasks-api/tasks/tasks/). You need the task ids for configuring flextime calculation correctly.
 * Fill in rest of the needed env variables in .envrc using the decrypt command output
-  * NOTE: column headers values are currently empty, using defaults from settings/defaults
-  * NOTE: some values not needing security are already filled for convenience, but double check them when doing this the first time
+
+### Changing non-secret config
+
+All config variables that don't need security are located in `src/settings/config.js`. Edit them there.s
 
 ### Running locally
 
