@@ -70,6 +70,6 @@ export default {
     sickLeave: 'sick leave',
     sickLeaveChildsSickness: 'child sick',
     extraPaidLeave: 'extra paid leave',
-    internallyInvoicable: 'internally invoicable',
+    internallyInvoicable: 'internally invoiceable',
   },
 };
