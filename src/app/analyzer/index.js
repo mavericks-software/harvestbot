@@ -11,7 +11,10 @@ export default ({ taskIds, agiledayTaskNames }, trackerType = 'harvest') => {
   const isExtraPaidLeave = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.extraPaidLeave : taskId === agiledayTaskNames.extraPaidLeave);
   const isSickLeave = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.sickLeave : taskId === agiledayTaskNames.sickLeave);
   const isChildsSickness = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.sickLeaveChildsSickness : taskId === agiledayTaskNames.sickLeaveChildsSickness);
-  const isInternallyInvoicable = (taskId) => (trackerType === 'harvest' ? taskId === taskIds.internallyInvoicable : taskId === agiledayTaskNames.internallyInvoicable);
+  // Hack: in agileday the Project is called internally invoicable, instead of the task name.
+  // This should be cleaned up when we clean up the old harvest code.
+  const isInternallyInvoicable = (entry) => (trackerType === 'harvest' ? entry.taskId === taskIds.internallyInvoicable : entry.projectName.toLowerCase() === agiledayTaskNames.internallyInvoicable);
+
   const isAway = (taskId) => isPaidVacation(taskId) || isUnpaidLeave(taskId);
   const countsTowardsTotalWorkHours = (taskId) => !isPaidVacation(taskId)
     && !isUnpaidLeave(taskId)
@@ -156,7 +159,7 @@ export default ({ taskIds, agiledayTaskNames }, trackerType = 'harvest') => {
           childsSicknessHours: isChildsSickness(entry.taskId)
             ? result.childsSicknessHours + entry.hours
             : result.childsSicknessHours,
-          internallyInvoicableHours: isInternallyInvoicable(entry.taskId)
+          internallyInvoicableHours: isInternallyInvoicable(entry)
             ? result.internallyInvoicableHours + entry.hours
             : result.internallyInvoicableHours,
           projectNames: projectNotAdded
