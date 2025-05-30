@@ -208,6 +208,8 @@ App configuration should be stored to Google Storage using the encrypt feature o
   export SLACK_NOTIFY_CHANNEL_ID=XXX
 ```
 
+#### Encrypt config the first time
+
 * The app will pick up the configuration from environment variables and bundle them to a file. Encrypt the first version to Google Storage
 
 ```
@@ -220,6 +222,22 @@ After you have successfully stored the configuration for the first time, you can
 ```
 
 Exporting the stored configuration to console output can be done using command "decrypt".
+
+#### Updating config
+
+Do initial setup in: Environment setup
+
+```
+nvm use
+npm install
+npm run build
+```
+
+Set up project config so you can run the decrypt and encrypt commands (set up .envrc initial values above).
+
+1. Fetch current encrypted config using `npm start decrypt`
+2. Do needed changes in .envrc file
+3. Upload changed config using `npm start encrypt` (run `direnv allow` if there is an error message requiring it)
 
 ### Cloud functions merge deployment
 
