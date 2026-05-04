@@ -34,17 +34,14 @@ export const initFlextime = async (req, res) => {
       return res.json({
         text: `
 Bot for calculating your hourly balance. Use /flextime to start calculation. Usage: \n
-/flextime stats <year> <month> [account] \n
-  - send monthly reports for the listed users. \n
-  - supports agileday as an account \n
-/flextime report <year> <month> [account] \n
-  - send monthly reports for the listed users. \n
-  - supports agileday as an account \n
-/flextime hours <email> <year> <month> <range> [account] \n
-  - send working hours report. \n
-  - supports agileday as an account (soon) \n
-/flextime [account] \n
-  - calculate flex saldo \n`,
+/flextime stats <year> <month> \n
+  - send monthly stats. Uses Agileday. \n
+/flextime report <year> <month> <last names...> \n
+  - send monthly billing reports for the listed users. Uses Agileday. \n
+/flextime hours <year> <month> <range> \n
+  - send working hours report. Uses Harvest (Agileday port pending). \n
+/flextime \n
+  - calculate flex saldo. Uses Harvest (Agileday port pending). \n`,
       });
     }
 
@@ -64,7 +61,9 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
       const month = cmdParts.length > 2 ? cmdParts[2] : currentDate.getMonth() + 1;
 
       const harvestAccount = validateHarvestAccount(config, cmdParts[cmdParts.length - 1]);
-      // TODO: clean up implementation when switch to Agileday is done.
+      // stats and report always go through Agileday; harvestAccount is kept in the
+      // payload for legacy compatibility but ignored by the Agileday path.
+      // hours still uses Harvest because there is no Agileday equivalent yet.
       const isAgileday = cmdParts[cmdParts.length - 1] === 'agileday';
       switch (cmdParts[0]) {
         case 'stats':
@@ -76,12 +75,12 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
               year,
               month,
               harvestAccount,
-              isAgileday,
+              isAgileday: true,
             });
           return res.json({ text: 'Starting to generate stats. This may take a while.' });
 
         case 'report':
-          logger.info('Enqueuing Harvest billing reports request');
+          logger.info('Enqueuing billing reports request');
           await queue(config)
             .enqueueBillingReportsRequest({
               userId: req.body.user_id,
@@ -90,7 +89,7 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
               month,
               lastNames: cmdParts.slice(3).map((lastName) => lastName.toLowerCase()),
               harvestAccount,
-              isAgileday,
+              isAgileday: true,
             });
           return res.json({ text: 'Starting to generate billing reports. This may take a while.' });
 
