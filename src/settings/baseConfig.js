@@ -11,6 +11,7 @@ export default {
     'U0155FBU0FL', // Robin Mäki
     'U07D023KZUH', // Juho Sopanen
     'U09CY1MATU6', // Jenni Suuronen
+    'U08TU8W9SQL', // Jaakko Saikkonen
   ],
   missingWorkhoursReportEmail: 'anna-kaisa.arvo@witted.com',
   emailDomains: 'mavericks.fi,witted.com',
