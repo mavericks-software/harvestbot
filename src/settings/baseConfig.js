@@ -1,17 +1,12 @@
 export default {
   admins: [
-    'U06ER6W1LHX', // Hiski Valli
     'U077YLRKE3H', // Matti Rautia
     'U04Q49ZH1EW', // Jouni Jaakkola
     'U01T7BHD9C4', // Kirsi Kytökorpi
     'U06DU8UP0AH', // Jessica Bendtsson
     'U06V9RMCZA5', // Anna-Kaisa Tolvanen
-    'U05L4LFNV6W', // Saara Ukkonen
     'U2BGL8ACA', // Teemu Tiilikainen
-    'U0155FBU0FL', // Robin Mäki
-    'U07D023KZUH', // Juho Sopanen
     'U09CY1MATU6', // Jenni Suuronen
-    'U08TU8W9SQL', // Jaakko Saikkonen
   ],
   missingWorkhoursReportEmail: 'anna-kaisa.arvo@witted.com',
   emailDomains: 'mavericks.fi,witted.com',
