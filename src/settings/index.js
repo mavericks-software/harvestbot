@@ -35,8 +35,6 @@ export default () => {
       // From Local
       ...baseConfig,
       harvestAccountIds: keyPairFromStr(baseConfig.harvestAccountIds),
-      // Generated
-      currentTime: new Date().getTime() / 1000,
     };
   };
 
