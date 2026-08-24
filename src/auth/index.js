@@ -6,13 +6,24 @@ const commandGroups = {
   hours: ['admins'],
 };
 
-export const commands = Object.keys(commandGroups);
+export const commands = Object.freeze(Object.keys(commandGroups));
+
+// Every config key the map reads, so a test can assert the real config still
+// has them. A renamed list would otherwise lock everyone out silently.
+export const groups = Object.freeze([...new Set(Object.values(commandGroups).flat())]);
 
 export default (config) => {
-  // commands.includes guard keeps inherited Object keys ('constructor') from
-  // resolving to something truthy, and keeps unknown commands failing closed.
-  const canRunCommand = (userId, command) => commands.includes(command)
-    && commandGroups[command].some((group) => (config[group] || []).includes(userId));
+  // Denies rather than throws on anything unexpected. The commands guard also
+  // stops inherited Object keys ('constructor') resolving to something truthy.
+  // The Array.isArray check matters because a list written as a comma string,
+  // the style used elsewhere in baseConfig, would make includes() a substring
+  // match and quietly authorise any id contained in it.
+  const canRunCommand = (userId, command) => Boolean(userId)
+    && commands.includes(command)
+    && commandGroups[command].some((group) => {
+      const allowed = config[group];
+      return Array.isArray(allowed) && allowed.includes(userId);
+    });
 
   return {
     canRunCommand,

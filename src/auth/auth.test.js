@@ -1,4 +1,5 @@
-import authorize, { commands } from './index';
+import baseConfig from '../settings/baseConfig';
+import authorize, { commands, groups } from './index';
 
 describe('Auth', () => {
   const ADMIN = 'U000ADMIN';
@@ -38,14 +39,36 @@ describe('Auth', () => {
     expect(auth.canRunCommand(ADMIN, 'constructor')).toBe(false);
   });
 
-  it('denies rather than throws when config lists are missing', () => {
-    const empty = authorize({});
+  it('denies a missing user id', () => {
     commands.forEach((command) => {
-      expect(empty.canRunCommand(ADMIN, command)).toBe(false);
+      expect(auth.canRunCommand(undefined, command)).toBe(false);
+      expect(auth.canRunCommand('', command)).toBe(false);
     });
   });
 
-  it('exposes exactly the commands the dispatcher handles', () => {
-    expect(commands.sort()).toEqual(['hours', 'report', 'stats']);
+  it('denies rather than throws when config lists are missing', () => {
+    [{}, { admins: null }, { admins: 0 }, { admins: {} }].forEach((config) => {
+      const empty = authorize(config);
+      commands.forEach((command) => {
+        expect(empty.canRunCommand(ADMIN, command)).toBe(false);
+      });
+    });
+  });
+
+  it('denies a list written as a comma string instead of an array', () => {
+    const stringy = authorize({ admins: `${ADMIN},${STRANGER}` });
+    // Would be a substring match if the shape were not checked.
+    expect(stringy.canRunCommand(ADMIN, 'stats')).toBe(false);
+    expect(stringy.canRunCommand('U000', 'stats')).toBe(false);
+  });
+
+  it('has a command map with exactly the keys the dispatcher switches on', () => {
+    expect([...commands].sort()).toEqual(['hours', 'report', 'stats']);
+  });
+
+  it('names only groups that exist as arrays in the real config', () => {
+    groups.forEach((group) => {
+      expect(Array.isArray(baseConfig[group])).toBe(true);
+    });
   });
 });

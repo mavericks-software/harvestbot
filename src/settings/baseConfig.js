@@ -10,6 +10,9 @@ export default {
   ],
   // Users who may run `report` but not `stats` or `hours`.
   // Full access lives in `admins` above; do not list the same id in both.
+  // `report` is NOT data-scoped: anyone listed here can pull billing reports,
+  // hour rates included, for any last name. See "Access levels" in the README.
+  // Must stay an array of ids. A comma-separated string will be rejected.
   reportOnlyUsers: [
   ],
   missingWorkhoursReportEmail: 'anna-kaisa.arvo@witted.com',

@@ -11,6 +11,10 @@ import verifier from './verifier';
 let logger = null;
 let appConfig = null;
 
+// One reply for both unknown-command paths. Deliberately does not echo the
+// user's text back into Slack.
+const unknownCommandReply = { text: 'Unknown command. Try /flextime help.' };
+
 const getAppConfig = async () => {
   if (appConfig) {
     return appConfig;
@@ -54,7 +58,7 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
 
       if (!commands.includes(command)) {
         logger.warn(`Received unknown command ${command}`);
-        return res.status(401).send('Unknown command');
+        return res.json(unknownCommandReply);
       }
 
       if (!auth(config).canRunCommand(req.body.user_id, command)) {
@@ -114,8 +118,8 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
           return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
         // Reachable only if a command is added to src/auth without a case here.
         default:
-          logger.warn(`No handler for command ${command}`);
-          return res.status(401).send('Unknown command');
+          logger.error(`No handler for command ${command}`);
+          return res.json(unknownCommandReply);
       }
     }
 

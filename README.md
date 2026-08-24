@@ -29,8 +29,12 @@ A command missing from that map is denied to everyone. Both lists are non-secret
 granting or revoking access is a commit to `master` — which redeploys the functions.
 
 Note that `report` is not data-scoped: anyone who can run it can pull reports for any last
-name, including hour rates. The reports are only ever emailed to the requester’s own
-Slack address, and only if its domain is in `emailDomains`.
+name, including hour rates. The reports are only ever emailed to the requester’s own Slack
+address, never to an address they pass in.
+
+These lists gate the Slack `/flextime` path only. The local CLI (`src/cli/index.js`) exposes
+the same commands with no user-level access control; it is gated by having the GCP
+credentials to decrypt the config in the first place.
 
 ### Flextime balance for the current Slack user
 
@@ -70,7 +74,7 @@ The values in the report are calculated as follows:
    * Parental leave
 
 ***Please note*** that if new tasks that should ***not*** be included in the total working hours are added to Harvest, they must be
-* added to the src/settings/config.js as variables (```TASK_ID_...```)
+* added to the `taskIds` (Harvest) and `agiledayTaskNames` (Agileday) maps in `src/settings/baseConfig.js`
 
 ### Monthly reminders
 
@@ -115,7 +119,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=/path/to/file.json
 
 ### Changing non-secret config
 
-All config variables that don't need security are located in `src/settings/config.js`. Edit them there.s
+All config variables that don't need security are located in `src/settings/baseConfig.js`. Edit them there.
 
 ### Running locally
 
