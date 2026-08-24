@@ -1,20 +1,27 @@
 import crypto from 'crypto';
 import log from '../log';
 
+const REQUEST_MAX_AGE_SECS = 5 * 60;
+
 export default (config, now = () => Date.now() / 1000) => {
   const logger = log(config);
-  const REQUEST_MAX_AGE_SECS = 5 * 60;
 
   // The clock has to be read per request. Reading it from config meant it was
   // stamped once when the function instance started and cached for the life of
   // that instance, so every request that arrived later looked like it came from
   // the past and the window never closed. Math.abs also rejects future stamps.
   const timestampWithinRange = (timestamp) => {
-    const sentAt = parseInt(timestamp, 10);
-    return Number.isFinite(sentAt) && Math.abs(now() - sentAt) < REQUEST_MAX_AGE_SECS;
+    const raw = String(timestamp);
+    if (!/^\d{1,10}$/.test(raw)) {
+      return false;
+    }
+    return Math.abs(now() - parseInt(raw, 10)) < REQUEST_MAX_AGE_SECS;
   };
 
   const signatureOk = (rawBody, timestamp, signature) => {
+    if (typeof signature !== 'string') {
+      return false;
+    }
     const expected = `v0=${crypto
       .createHmac('sha256', config.slackSigningSecret)
       .update(`v0:${timestamp}:${rawBody}`)
@@ -22,9 +29,10 @@ export default (config, now = () => Date.now() / 1000) => {
     // Never log rawBody, the digest or the signature. The body carries the
     // caller's response_url, and logging the digest for a body we are about to
     // reject turns this endpoint into an oracle that hands an attacker a valid
-    // signature for any request they care to forge.
+    // signature for any request they care to forge. verifier.test.js asserts
+    // this, so the line below staying absent is enforced, not just documented.
     const expectedBytes = Buffer.from(expected);
-    const receivedBytes = Buffer.from(signature || '');
+    const receivedBytes = Buffer.from(signature);
     return expectedBytes.length === receivedBytes.length
       && crypto.timingSafeEqual(expectedBytes, receivedBytes);
   };
