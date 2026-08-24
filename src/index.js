@@ -1,4 +1,5 @@
 import application from './app';
+import auth, { commands } from './auth';
 import log from './log';
 import db from './cloud/db';
 import queue from './cloud/queue';
@@ -49,11 +50,16 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
 
     const cmdParts = cmd.split(' ');
     if (cmdParts.length > 0 && cmdParts[0].trim().length > 0) {
-      const { admins } = config;
+      const command = cmdParts[0];
 
-      if (!admins.includes(req.body.user_id)) {
-        logger.warn(`Received unauthorized stats request from user ${req.body.user_id}`);
-        return res.status(401).send('Unauthorized');
+      if (!commands.includes(command)) {
+        logger.warn(`Received unknown command ${command}`);
+        return res.status(401).send('Unknown command');
+      }
+
+      if (!auth(config).canRunCommand(req.body.user_id, command)) {
+        logger.warn(`Received unauthorized ${command} request from user ${req.body.user_id}`);
+        return res.json({ text: `You are not authorized to run the ${command} command.` });
       }
 
       const currentDate = new Date();
@@ -65,7 +71,7 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
       // payload for legacy compatibility but ignored by the Agileday path.
       // hours still uses Harvest because there is no Agileday equivalent yet.
       const isAgileday = cmdParts[cmdParts.length - 1] === 'agileday';
-      switch (cmdParts[0]) {
+      switch (command) {
         case 'stats':
           logger.info('Enqueuing stats request');
           await queue(config)
@@ -106,8 +112,9 @@ Bot for calculating your hourly balance. Use /flextime to start calculation. Usa
               isAgileday,
             });
           return res.json({ text: 'Starting to generate working hours report. This may take a while.' });
+        // Reachable only if a command is added to src/auth without a case here.
         default:
-          logger.warn('Received unknown command');
+          logger.warn(`No handler for command ${command}`);
           return res.status(401).send('Unknown command');
       }
     }

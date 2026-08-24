@@ -14,6 +14,24 @@ Harvestbot is deployed in Google Cloud. Functionality is implemented with Google
 
 ## Usage
 
+### Access levels
+
+`/flextime` and `/flextime help` are open to everyone in the workspace.
+
+The `stats`, `report` and `hours` commands are restricted by Slack user id. Two lists in
+[`src/settings/baseConfig.js`](./src/settings/baseConfig.js) hold the ids:
+
+* `admins` — may run every command.
+* `reportOnlyUsers` — may run `report` only.
+
+Which list grants which command is declared in [`src/auth/index.js`](./src/auth/index.js).
+A command missing from that map is denied to everyone. Both lists are non-secret config, so
+granting or revoking access is a commit to `master` — which redeploys the functions.
+
+Note that `report` is not data-scoped: anyone who can run it can pull reports for any last
+name, including hour rates. The reports are only ever emailed to the requester’s own
+Slack address, and only if its domain is in `emailDomains`.
+
 ### Flextime balance for the current Slack user
 
 ```/flextime```

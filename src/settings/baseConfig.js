@@ -8,6 +8,10 @@ export default {
     'U2BGL8ACA', // Teemu Tiilikainen
     'U09CY1MATU6', // Jenni Suuronen
   ],
+  // Users who may run `report` but not `stats` or `hours`.
+  // Full access lives in `admins` above; do not list the same id in both.
+  reportOnlyUsers: [
+  ],
   missingWorkhoursReportEmail: 'anna-kaisa.arvo@witted.com',
   emailDomains: 'mavericks.fi,witted.com',
   harvestAccountId: '988127',
