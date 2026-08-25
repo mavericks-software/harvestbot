@@ -71,4 +71,55 @@ describe('Auth', () => {
       expect(Array.isArray(baseConfig[group])).toBe(true);
     });
   });
+
+  describe(
+    'the real config',
+    () => {
+      const real = authorize(baseConfig);
+
+      // These two only check the config is internally consistent, not that
+      // any given person is listed: canRunCommand is list membership, so
+      // iterating the same list to assert membership would be circular.
+      // hasAssertions stops them passing silently on an empty list.
+      it('lets everyone in admins run every command', () => {
+        expect.hasAssertions();
+        baseConfig.admins.forEach((userId) => {
+          commands.forEach((command) => {
+            expect(real.canRunCommand(userId, command)).toBe(true);
+          });
+        });
+      });
+
+      it('lets everyone in reportOnlyUsers run report and nothing else', () => {
+        expect.hasAssertions();
+        baseConfig.reportOnlyUsers.forEach((userId) => {
+          expect(real.canRunCommand(userId, 'report')).toBe(true);
+          expect(real.canRunCommand(userId, 'stats')).toBe(false);
+          expect(real.canRunCommand(userId, 'hours')).toBe(false);
+        });
+      });
+
+      // Revoked in 4a6aefe and not re-granted. Named here so a stray paste or
+      // a copied line cannot quietly restore access. If one of them is meant
+      // to get access, remove them from this list in the same commit.
+      it('still denies everyone revoked and not since re-granted', () => {
+        [
+          'U06ER6W1LHX', // Hiski Valli
+          'U05L4LFNV6W', // Saara Ukkonen
+          'U07D023KZUH', // Juho Sopanen
+        ].forEach((userId) => {
+          commands.forEach((command) => {
+            expect(real.canRunCommand(userId, command)).toBe(false);
+          });
+        });
+      });
+
+      // The lists are hand-edited on every grant. An id in both would make
+      // reportOnlyUsers look like a downgrade while admins still grants all.
+      it('never lists the same id in two groups', () => {
+        const all = groups.flatMap((group) => baseConfig[group]);
+        expect(all.length).toBe(new Set(all).size);
+      });
+    },
+  );
 });

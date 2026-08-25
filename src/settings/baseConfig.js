@@ -14,6 +14,8 @@ export default {
   // hour rates included, for any last name. See "Access levels" in the README.
   // Must stay an array of ids. A comma-separated string will be rejected.
   reportOnlyUsers: [
+    'U0155FBU0FL', // Robin Mäki
+    'U08TU8W9SQL', // Jaakko Saikkonen
   ],
   missingWorkhoursReportEmail: 'anna-kaisa.arvo@witted.com',
   emailDomains: 'mavericks.fi,witted.com',
