@@ -16,6 +16,7 @@ export default {
   reportOnlyUsers: [
     'U0155FBU0FL', // Robin Mäki
     'U08TU8W9SQL', // Jaakko Saikkonen
+    'U08Q840F2LB', // Ville Miettinen
   ],
   missingWorkhoursReportEmail: 'anna-kaisa.arvo@witted.com',
   emailDomains: 'mavericks.fi,witted.com',
